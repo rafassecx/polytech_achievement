@@ -10,15 +10,15 @@ const MEDALS = ['🥇', '🥈', '🥉'];
 
 function StatCard({ Icon, iconColor, iconBg, value, label }) {
   return (
-    <div className="glass-card p-5 text-center">
+    <div className="glass-card p-3 sm:p-5 text-center">
       <div
-        className="w-12 h-12 rounded-2xl flex items-center justify-center mx-auto mb-3"
+        className="w-9 h-9 sm:w-12 sm:h-12 rounded-2xl flex items-center justify-center mx-auto mb-2 sm:mb-3"
         style={{ background: iconBg }}
       >
-        <Icon size={22} style={{ color: iconColor }} />
+        <Icon size={18} style={{ color: iconColor }} />
       </div>
-      <div className="text-2xl font-bold text-theme">{value ?? '—'}</div>
-      <div className="text-xs text-muted mt-0.5">{label}</div>
+      <div className="text-xl sm:text-2xl font-bold text-theme">{value ?? '—'}</div>
+      <div className="text-[11px] sm:text-xs text-muted mt-0.5">{label}</div>
     </div>
   );
 }
@@ -147,7 +147,7 @@ export default function Home() {
     <div className="max-w-6xl mx-auto px-5 py-8">
 
       {/* Hero */}
-      <div className="glass-card px-8 py-10 mb-6 text-center">
+      <div className="glass-card px-5 py-7 sm:px-8 sm:py-10 mb-6 text-center">
         <div
           className="w-16 h-16 rounded-3xl flex items-center justify-center mx-auto mb-4"
           style={{ background: 'rgba(245,158,11,0.15)' }}
@@ -212,7 +212,7 @@ export default function Home() {
 
       {/* Мини-рейтинг + осы айда */}
       {(topStudents.length > 0 || stats) && (
-        <div className="flex gap-4 mb-7">
+        <div className="flex flex-col sm:flex-row gap-4 mb-7">
           <MiniLeaderboard students={topStudents} />
           <MonthCard stats={stats} user={user} />
         </div>

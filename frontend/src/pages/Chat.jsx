@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { SquarePen, Users, MessageSquare, SendHorizontal, X } from 'lucide-react';
+import { SquarePen, Users, MessageSquare, SendHorizontal, X, ArrowLeft } from 'lucide-react';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -88,6 +88,8 @@ export default function Chat() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showSearch, setShowSearch] = useState(false);
+  // мобильде sidebar/chat ауысу
+  const [mobileSidebar, setMobileSidebar] = useState(true);
 
   const bottomRef = useRef(null);
   const pollRef = useRef(null);
@@ -155,10 +157,12 @@ export default function Chat() {
     setActiveChat({ type: 'direct', id: u.id, name: u.full_name, avatar: u.avatar_url });
     setShowSearch(false);
     setSearchQuery('');
+    setMobileSidebar(false);
   };
 
   const openGroupChat = (groupName) => {
     setActiveChat({ type: 'group', id: groupName, name: `${groupName} тобы`, groupName });
+    setMobileSidebar(false);
   };
 
   const sendMessage = async (e) => {
@@ -236,11 +240,11 @@ export default function Chat() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-5 py-6 h-[calc(100vh-120px)]">
+    <div className="max-w-6xl mx-auto px-3 md:px-5 py-3 md:py-6 h-[calc(100dvh-200px)] md:h-[calc(100vh-120px)]">
       <div className="flex gap-4 h-full">
 
         {/* ═══ СОЛ ЖАҚ: диалог тізімі ═══ */}
-        <div className="glass-panel w-72 shrink-0 flex flex-col overflow-hidden">
+        <div className={`glass-panel flex flex-col overflow-hidden w-full md:w-72 md:shrink-0 md:flex ${mobileSidebar ? 'flex' : 'hidden'}`}>
           <div className="px-4 py-4 border-b border-white/10">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-base font-bold text-theme">Чаттар</h2>
@@ -321,11 +325,17 @@ export default function Chat() {
         </div>
 
         {/* ═══ ОҢ ЖАҚ: хабарламалар ═══ */}
-        <div className="glass-panel flex-1 flex flex-col overflow-hidden">
+        <div className={`glass-panel flex-1 flex flex-col overflow-hidden md:flex ${mobileSidebar ? 'hidden' : 'flex'}`}>
           {activeChat ? (
             <>
               {/* Тақырып жолағы */}
-              <div className="px-5 py-4 border-b border-white/10 flex items-center gap-3">
+              <div className="px-4 py-3 md:py-4 border-b border-white/10 flex items-center gap-3">
+                <button
+                  onClick={() => setMobileSidebar(true)}
+                  className="md:hidden btn-glass p-2 flex items-center justify-center shrink-0"
+                >
+                  <ArrowLeft size={16} />
+                </button>
                 {activeChat.type === 'group' ? (
                   <div
                     className="w-10 h-10 rounded-2xl flex items-center justify-center"

@@ -107,11 +107,13 @@ export default function AdminUsers() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-left">
-                  {['Пайдаланушы', 'Email', 'Топ', 'Рөл', 'Telegram', 'Күй', ''].map((h) => (
-                    <th key={h} className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">
-                      {h}
-                    </th>
-                  ))}
+                  <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Пайдаланушы</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden md:table-cell">Email</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden sm:table-cell">Топ</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Рөл</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden lg:table-cell">Telegram</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden sm:table-cell">Күй</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider"></th>
                 </tr>
               </thead>
               <tbody>
@@ -137,8 +139,8 @@ export default function AdminUsers() {
                           <span className="font-medium text-theme">{u.full_name}</span>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-muted text-xs">{u.email}</td>
-                      <td className="px-4 py-3 text-muted text-xs">{u.group_name || '—'}</td>
+                      <td className="px-4 py-3 text-muted text-xs hidden md:table-cell">{u.email}</td>
+                      <td className="px-4 py-3 text-muted text-xs hidden sm:table-cell">{u.group_name || '—'}</td>
                       <td className="px-4 py-3">
                         <span
                           className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
@@ -147,13 +149,13 @@ export default function AdminUsers() {
                           {ROLE_LABELS[u.role] || u.role}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-muted">
+                      <td className="px-4 py-3 text-xs text-muted hidden lg:table-cell">
                         {u.telegram_id
                           ? <span className="flex items-center gap-1"><TelegramIcon size={12} /> @{u.telegram_username || ''}</span>
                           : '—'
                         }
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 hidden sm:table-cell">
                         <span
                           className="text-xs font-medium"
                           style={{ color: u.is_active ? 'var(--clr-success)' : 'var(--clr-danger)' }}
