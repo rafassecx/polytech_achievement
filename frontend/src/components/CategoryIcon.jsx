@@ -1,0 +1,25 @@
+import { BookOpen, Dumbbell, Palette, Handshake, Sparkles } from 'lucide-react';
+
+const MAP = {
+  academic: { Icon: BookOpen,  color: '#6366f1', bg: 'rgba(99,102,241,0.15)'  },
+  sport:    { Icon: Dumbbell,  color: '#ef4444', bg: 'rgba(239,68,68,0.15)'   },
+  cultural: { Icon: Palette,   color: '#8b5cf6', bg: 'rgba(139,92,246,0.15)' },
+  social:   { Icon: Handshake, color: '#10b981', bg: 'rgba(16,185,129,0.15)' },
+  other:    { Icon: Sparkles,  color: '#f59e0b', bg: 'rgba(245,158,11,0.15)' },
+};
+
+// Маленькая инлайн-иконка для бейджей
+export function CategoryBadgeIcon({ category, size = 13 }) {
+  const item = MAP[category] || MAP.other;
+  return <item.Icon size={size} style={{ color: item.color }} className="shrink-0" />;
+}
+
+// Большая иконка с фоном для карточки (когда нет preview)
+export function CategoryCardIcon({ category, className = '' }) {
+  const item = MAP[category] || MAP.other;
+  return (
+    <div className={`w-full h-full flex items-center justify-center ${className}`} style={{ background: item.bg }}>
+      <item.Icon size={44} style={{ color: item.color }} strokeWidth={1.5} />
+    </div>
+  );
+}

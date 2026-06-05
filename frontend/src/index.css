@@ -1,0 +1,266 @@
+@import "tailwindcss";
+
+/* ═══════════════════════════════════════════
+   Tailwind токендері (backward compat үшін)
+═══════════════════════════════════════════ */
+@theme {
+  --color-navy: #1e1b4b;
+  --color-navy-light: #312e81;
+  --color-navy-dark: #0f0d2e;
+  --color-gold: #818cf8;
+  --color-gold-light: #a5b4fc;
+  --color-gold-dark: #6366f1;
+  --color-cream: #f0f2ff;
+  --color-paper: #e8eaf6;
+  --color-ink: #1e1b4b;
+  --color-muted: #7473a8;
+  --color-accent: #6366f1;
+  --font-display: "Inter", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+}
+
+/* ═══════════════════════════════════════════
+   Жарық тема (әдепкі)
+═══════════════════════════════════════════ */
+:root {
+  --bg: linear-gradient(135deg, #dce8f8 0%, #e8dff8 45%, #f7e0ef 100%);
+  --glass: rgba(255, 255, 255, 0.62);
+  --glass-border: rgba(255, 255, 255, 0.82);
+  --glass-shadow: 0 8px 32px rgba(88, 80, 180, 0.10), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  --nav-bg: rgba(255, 255, 255, 0.80);
+  --nav-border: rgba(180, 180, 255, 0.25);
+  --clr-text: #1e1b4b;
+  --clr-sub: #4338ca;
+  --clr-muted: #7473a8;
+  --clr-accent: #6366f1;
+  --clr-accent-h: #4f46e5;
+  --clr-danger: #ef4444;
+  --clr-success: #10b981;
+  --warn-bg: rgba(245, 158, 11, 0.10);
+  --warn-border: rgba(245, 158, 11, 0.30);
+  --warn-text: #92400e;
+  --input-bg: rgba(255, 255, 255, 0.74);
+  --input-border: rgba(99, 102, 241, 0.22);
+  --input-ring: rgba(99, 102, 241, 0.26);
+  --badge-bg: rgba(99, 102, 241, 0.12);
+  --badge-text: #4338ca;
+}
+
+/* ═══════════════════════════════════════════
+   Қараңғы тема
+═══════════════════════════════════════════ */
+[data-theme="dark"] {
+  --color-ink: #e0e7ff;
+  --color-muted: #7c85c0;
+  --color-cream: #090912;
+  --color-paper: #14102e;
+  --color-navy: #e0e7ff;
+  --color-gold: #a5b4fc;
+  --color-gold-dark: #818cf8;
+
+  --bg: linear-gradient(135deg, #090912 0%, #14102e 50%, #0b1520 100%);
+  --glass: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-shadow: 0 8px 40px rgba(0, 0, 0, 0.55);
+  --nav-bg: rgba(10, 10, 22, 0.80);
+  --nav-border: rgba(255, 255, 255, 0.08);
+  --clr-text: #e0e7ff;
+  --clr-sub: #a5b4fc;
+  --clr-muted: #7c85c0;
+  --clr-accent: #818cf8;
+  --clr-accent-h: #6366f1;
+  --clr-danger: #f87171;
+  --clr-success: #34d399;
+  --warn-bg: rgba(251, 191, 36, 0.10);
+  --warn-border: rgba(251, 191, 36, 0.22);
+  --warn-text: #fbbf24;
+  --input-bg: rgba(255, 255, 255, 0.07);
+  --input-border: rgba(255, 255, 255, 0.14);
+  --input-ring: rgba(129, 140, 248, 0.22);
+  --badge-bg: rgba(129, 140, 248, 0.18);
+  --badge-text: #a5b4fc;
+}
+
+/* ═══════════════════════════════════════════
+   Негізгі стильдер
+═══════════════════════════════════════════ */
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  color: var(--clr-text);
+  background: var(--bg);
+  background-attachment: fixed;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: color 0.2s ease;
+}
+
+/* ═══════════════════════════════════════════
+   Glassmorphism компоненттері
+═══════════════════════════════════════════ */
+.glass-card {
+  background: var(--glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-panel {
+  background: var(--glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--glass-border);
+  border-radius: 16px;
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-nav {
+  background: var(--nav-bg);
+  backdrop-filter: blur(24px) saturate(200%);
+  -webkit-backdrop-filter: blur(24px) saturate(200%);
+  border-bottom: 1px solid var(--nav-border);
+}
+
+/* ═══════════════════════════════════════════
+   Инпуттар
+═══════════════════════════════════════════ */
+.glass-input {
+  background: var(--input-bg);
+  border: 1px solid var(--input-border);
+  border-radius: 12px;
+  color: var(--clr-text);
+  width: 100%;
+  padding: 0.65rem 1rem;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.glass-input::placeholder { color: var(--clr-muted); opacity: 0.75; }
+.glass-input:focus {
+  border-color: var(--clr-accent);
+  box-shadow: 0 0 0 3px var(--input-ring);
+}
+select.glass-input { cursor: pointer; }
+textarea.glass-input { resize: none; }
+
+/* ═══════════════════════════════════════════
+   Батырмалар
+═══════════════════════════════════════════ */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  background: var(--clr-accent);
+  color: #fff;
+  border-radius: 14px;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(99, 102, 241, 0.38);
+  transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.btn-primary:hover:not(:disabled) {
+  background: var(--clr-accent-h);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(99, 102, 241, 0.50);
+}
+.btn-primary:active:not(:disabled) { transform: translateY(0); }
+.btn-primary:disabled { opacity: 0.52; cursor: not-allowed; }
+
+.btn-glass {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--clr-text);
+  border-radius: 12px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-glass:hover:not(:disabled) {
+  background: var(--badge-bg);
+  border-color: var(--clr-accent);
+  color: var(--clr-accent);
+}
+.btn-glass:disabled { opacity: 0.52; cursor: not-allowed; }
+
+/* ═══════════════════════════════════════════
+   Хабарламалар / ескертулер
+═══════════════════════════════════════════ */
+.alert-error {
+  background: rgba(239, 68, 68, 0.10);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  color: var(--clr-danger);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+}
+.alert-warn {
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  color: var(--warn-text);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+}
+.alert-success {
+  background: rgba(16, 185, 129, 0.10);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: var(--clr-success);
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+}
+
+/* ═══════════════════════════════════════════
+   Бейдж
+═══════════════════════════════════════════ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  background: var(--badge-bg);
+  color: var(--badge-text);
+  border-radius: 20px;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  padding: 0.18rem 0.65rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════
+   Мәтін утилиттері
+═══════════════════════════════════════════ */
+.text-theme    { color: var(--clr-text); }
+.text-sub      { color: var(--clr-sub); }
+.text-muted    { color: var(--clr-muted); }
+.text-accent   { color: var(--clr-accent); }
+
+/* ═══════════════════════════════════════════
+   Анимациялар (iOS стилі)
+═══════════════════════════════════════════ */
+.spring  { transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.smooth  { transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
+
+.hover-lift {
+  transition: transform 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.28s ease;
+}
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 50px rgba(99, 102, 241, 0.18) !important;
+}
