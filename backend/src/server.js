@@ -62,6 +62,17 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// Production: фронтенд статикасын раздаём
+if (process.env.NODE_ENV === 'production') {
+  const frontendDist = path.join(__dirname, '..', '..', 'frontend', 'dist');
+  app.use(express.static(frontendDist));
+  // SPA роутинг — барлық API емес сұраныстарды index.html-ге жіберу
+  app.get('*', (req, res) => {
+    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return;
+    res.sendFile(path.join(frontendDist, 'index.html'));
+  });
+}
+
 app.listen(PORT, () => {
-  console.log(`🚀 Сервер запущен на http://localhost:${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
