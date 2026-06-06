@@ -10,7 +10,9 @@ import Register from './pages/Register';
 import AddAchievement from './pages/AddAchievement';
 import AchievementDetail from './pages/AchievementDetail';
 import Profile from './pages/Profile';
+import PublicProfile from './pages/PublicProfile';
 import MyAchievements from './pages/MyAchievements';
+import BookmarksPage from './pages/BookmarksPage';
 import Moderation from './pages/Moderation';
 import AdminUsers from './pages/AdminUsers';
 import Chat from './pages/Chat';
@@ -31,9 +33,11 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/achievements/:id" element={<AchievementDetail />} />
+              <Route path="/users/:id" element={<PublicProfile />} />
               <Route path="/add" element={<ProtectedRoute><AddAchievement /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/my-achievements" element={<ProtectedRoute><MyAchievements /></ProtectedRoute>} />
+              <Route path="/bookmarks" element={<ProtectedRoute><BookmarksPage /></ProtectedRoute>} />
               <Route path="/chat" element={<ProtectedRoute><Chat /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route

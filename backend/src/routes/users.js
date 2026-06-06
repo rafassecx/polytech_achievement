@@ -6,10 +6,10 @@ const fs = require('fs');
 const pool = require('../config/db');
 const { authMiddleware, checkRole } = require('../middleware/auth');
 const { generateCode } = require('../utils/telegramCodes');
+const { createNotification, notifyAllCurators } = require('../utils/notifications');
 
 const router = express.Router();
 
-// Папка для аватаров
 const avatarDir = 'uploads/avatars';
 if (!fs.existsSync(avatarDir)) fs.mkdirSync(avatarDir, { recursive: true });
 
@@ -31,12 +31,11 @@ const avatarUpload = multer({
 });
 
 // ===== СПИСОК ПОЛЬЗОВАТЕЛЕЙ (admin/curator) =====
-// GET /api/users?role=student&group_name=P22-2B&search=иванов
 router.get('/', authMiddleware, checkRole('curator', 'admin'), async (req, res) => {
   try {
     const { role, group_name, search, limit = 50, offset = 0 } = req.query;
     let query = `
-      SELECT id, email, full_name, role, group_name, avatar_url, 
+      SELECT id, email, full_name, role, group_name, avatar_url,
              telegram_id, telegram_username, is_active, created_at
       FROM users WHERE 1=1
     `;
@@ -53,60 +52,48 @@ router.get('/', authMiddleware, checkRole('curator', 'admin'), async (req, res) 
     const result = await pool.query(query, params);
     res.json({ users: result.rows, count: result.rows.length });
   } catch (error) {
-    console.error('Ошибка списка:', error);
+    console.error(error);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
 
-// ===== ОБНОВИТЬ СВОЙ ПРОФИЛЬ =====
-// PUT /api/users/me
+// ===== ОБНОВИТЬ ПРОФИЛЬ =====
+// Студенттер топты тікелей өзгерте алмайды — group_name игнорируется
 router.put('/me', authMiddleware, async (req, res) => {
   try {
     const { full_name, bio, group_name } = req.body;
+    const isStudent = req.user.role === 'student';
+
     const result = await pool.query(`
-      UPDATE users 
+      UPDATE users
       SET full_name = COALESCE($1, full_name),
           bio = COALESCE($2, bio),
-          group_name = COALESCE($3, group_name),
+          group_name = CASE WHEN $3::boolean THEN COALESCE($4, group_name) ELSE group_name END,
           updated_at = CURRENT_TIMESTAMP
-      WHERE id = $4
+      WHERE id = $5
       RETURNING id, email, full_name, role, group_name, avatar_url, bio
-    `, [full_name, bio, group_name, req.user.id]);
+    `, [full_name, bio, !isStudent, group_name, req.user.id]);
 
-    res.json({ message: 'Профиль обновлён', user: result.rows[0] });
+    res.json({ message: 'Профиль сақталды', user: result.rows[0] });
   } catch (error) {
-    console.error('Ошибка обновления:', error);
+    console.error(error);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
 
 // ===== СМЕНА ПАРОЛЯ =====
-// POST /api/users/me/password
 router.post('/me/password', authMiddleware, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-
-    if (!currentPassword || !newPassword) {
-      return res.status(400).json({ message: 'Барлық өрістерді толтырыңыз' });
-    }
-    if (newPassword.length < 6) {
-      return res.status(400).json({ message: 'Жаңа құпиясөз кемінде 6 таңбадан тұруы керек' });
-    }
+    if (!currentPassword || !newPassword) return res.status(400).json({ message: 'Барлық өрістерді толтырыңыз' });
+    if (newPassword.length < 6) return res.status(400).json({ message: 'Жаңа құпиясөз кемінде 6 таңба' });
 
     const result = await pool.query('SELECT password_hash FROM users WHERE id = $1', [req.user.id]);
-    const user = result.rows[0];
-
-    const isValid = await bcrypt.compare(currentPassword, user.password_hash);
-    if (!isValid) {
-      return res.status(400).json({ message: 'Ағымдағы құпиясөз қате' });
-    }
+    const isValid = await bcrypt.compare(currentPassword, result.rows[0].password_hash);
+    if (!isValid) return res.status(400).json({ message: 'Ағымдағы құпиясөз қате' });
 
     const newHash = await bcrypt.hash(newPassword, 10);
-    await pool.query(
-      'UPDATE users SET password_hash = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
-      [newHash, req.user.id]
-    );
-
+    await pool.query('UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2', [newHash, req.user.id]);
     res.json({ message: 'Құпиясөз сәтті өзгертілді' });
   } catch (err) {
     console.error(err);
@@ -114,47 +101,37 @@ router.post('/me/password', authMiddleware, async (req, res) => {
   }
 });
 
-// ===== ПОЛУЧИТЬ КОД ДЛЯ ПРИВЯЗКИ TELEGRAM =====
-// POST /api/users/me/telegram-code
+// ===== TELEGRAM КОД =====
 router.post('/me/telegram-code', authMiddleware, async (req, res) => {
   try {
     const { code, expires_at } = generateCode(req.user.id);
-    res.json({
-      code,
-      expires_at,
-      message: `Введите в боте: /link ${code}`
-    });
+    res.json({ code, expires_at, message: `Введите в боте: /link ${code}` });
   } catch (error) {
-    console.error('Ошибка генерации кода:', error);
+    console.error(error);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
 
-// ===== ОТВЯЗАТЬ TELEGRAM ОТ АККАУНТА =====
-// POST /api/users/me/telegram-unlink
+// ===== TELEGRAM ОТВЯЗАТЬ =====
 router.post('/me/telegram-unlink', authMiddleware, async (req, res) => {
   try {
     await pool.query(
-      `UPDATE users SET telegram_id = NULL, telegram_username = NULL, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $1`,
+      `UPDATE users SET telegram_id = NULL, telegram_username = NULL, updated_at = NOW() WHERE id = $1`,
       [req.user.id]
     );
     res.json({ message: 'Telegram отвязан' });
   } catch (error) {
-    console.error('Ошибка отвязки:', error);
+    console.error(error);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
 
-// ===== ЗАГРУЗИТЬ АВАТАР =====
-// POST /api/users/me/avatar
+// ===== АВАТАР =====
 router.post('/me/avatar', authMiddleware, avatarUpload.single('avatar'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'Файл не загружен' });
-
     const avatarUrl = '/' + req.file.path.replace(/\\/g, '/');
 
-    // Удаляем старый аватар
     const old = await pool.query('SELECT avatar_url FROM users WHERE id = $1', [req.user.id]);
     if (old.rows[0]?.avatar_url) {
       const oldPath = old.rows[0].avatar_url.replace(/^\//, '');
@@ -162,89 +139,223 @@ router.post('/me/avatar', authMiddleware, avatarUpload.single('avatar'), async (
     }
 
     const result = await pool.query(
-      `UPDATE users SET avatar_url = $1, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $2 RETURNING avatar_url`,
+      `UPDATE users SET avatar_url = $1, updated_at = NOW() WHERE id = $2 RETURNING avatar_url`,
       [avatarUrl, req.user.id]
     );
-
     res.json({ message: 'Аватар обновлён', avatar_url: result.rows[0].avatar_url });
   } catch (error) {
-    console.error('Ошибка аватара:', error);
+    console.error(error);
     res.status(500).json({ message: error.message || 'Ошибка сервера' });
   }
 });
 
-// ===== ПОЛУЧИТЬ ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ =====
-// GET /api/users/:id
+// ===== ТЕКУЩИЙ ЗАПРОС НА СМЕНУ ГРУППЫ =====
+router.get('/me/group-request', authMiddleware, async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM group_change_requests WHERE user_id = $1 ORDER BY created_at DESC LIMIT 1`,
+      [req.user.id]
+    );
+    res.json({ request: result.rows[0] || null });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Қате' });
+  }
+});
+
+// ===== ПОДАТЬ ЗАПРОС НА СМЕНУ ГРУППЫ =====
+router.post('/me/group-request', authMiddleware, async (req, res) => {
+  const { requested_group } = req.body;
+  if (!requested_group?.trim()) return res.status(400).json({ message: 'Топ атын жазыңыз' });
+
+  try {
+    const pending = await pool.query(
+      `SELECT id FROM group_change_requests WHERE user_id = $1 AND status = 'pending'`,
+      [req.user.id]
+    );
+    if (pending.rows.length > 0) return res.status(400).json({ message: 'Күтудегі сұрауыңыз бар' });
+
+    const me = await pool.query('SELECT group_name, full_name FROM users WHERE id = $1', [req.user.id]);
+    const { group_name: current, full_name } = me.rows[0];
+
+    if (current?.trim() === requested_group.trim()) {
+      return res.status(400).json({ message: 'Сіз осы топта тұрсыз' });
+    }
+
+    await pool.query(
+      `INSERT INTO group_change_requests (user_id, current_group, requested_group) VALUES ($1, $2, $3)`,
+      [req.user.id, current, requested_group.trim()]
+    );
+
+    // Барлық кураторлар мен adminдерді хабардар ету
+    const curators = await pool.query(
+      `SELECT id FROM users WHERE role IN ('curator', 'admin') AND is_active = TRUE AND id != $1`,
+      [req.user.id]
+    );
+    for (const c of curators.rows) {
+      createNotification({
+        user_id: c.id,
+        type: 'new_pending',
+        title: 'Топ ауыстыру сұрауы',
+        message: `${full_name}: «${current || '—'}» → «${requested_group.trim()}»`,
+        related_id: null,
+        send_telegram: false,
+      }).catch(() => {});
+    }
+
+    res.status(201).json({ message: 'Сұрау жіберілді' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Қате' });
+  }
+});
+
+// ===== ОТМЕНИТЬ СВОЙ ЗАПРОС =====
+router.delete('/me/group-request', authMiddleware, async (req, res) => {
+  try {
+    await pool.query(
+      `DELETE FROM group_change_requests WHERE user_id = $1 AND status = 'pending'`,
+      [req.user.id]
+    );
+    res.json({ message: 'Сұрау жойылды' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Қате' });
+  }
+});
+
+// ===== СПИСОК ЗАПРОСОВ НА СМЕНУ ГРУППЫ (curator/admin) =====
+router.get('/group-requests', authMiddleware, checkRole('curator', 'admin'), async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT gcr.*, u.full_name, u.email, u.avatar_url
+      FROM group_change_requests gcr
+      JOIN users u ON u.id = gcr.user_id
+      WHERE gcr.status = 'pending'
+      ORDER BY gcr.created_at ASC
+    `);
+    res.json({ requests: result.rows });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Қате' });
+  }
+});
+
+// ===== ОДОБРИТЬ ЗАПРОС =====
+router.patch('/group-requests/:id/approve', authMiddleware, checkRole('curator', 'admin'), async (req, res) => {
+  const { id } = req.params;
+  try {
+    const reqRow = await pool.query(
+      `SELECT * FROM group_change_requests WHERE id = $1 AND status = 'pending'`, [id]
+    );
+    if (!reqRow.rows[0]) return res.status(404).json({ message: 'Сұрау табылмады' });
+    const r = reqRow.rows[0];
+
+    await pool.query(
+      `UPDATE group_change_requests SET status = 'approved', reviewed_by = $1, updated_at = NOW() WHERE id = $2`,
+      [req.user.id, id]
+    );
+    await pool.query(`UPDATE users SET group_name = $1, updated_at = NOW() WHERE id = $2`, [r.requested_group, r.user_id]);
+
+    createNotification({
+      user_id: r.user_id,
+      type: 'achievement_approved',
+      title: 'Топ өзгертілді',
+      message: `Сіздің топыңыз «${r.requested_group}» деп өзгертілді`,
+      related_id: null,
+    }).catch(() => {});
+
+    res.json({ message: 'Бекітілді' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Қате' });
+  }
+});
+
+// ===== ОТКЛОНИТЬ ЗАПРОС =====
+router.patch('/group-requests/:id/reject', authMiddleware, checkRole('curator', 'admin'), async (req, res) => {
+  const { id } = req.params;
+  const { moderator_comment } = req.body;
+  try {
+    const reqRow = await pool.query(
+      `SELECT * FROM group_change_requests WHERE id = $1 AND status = 'pending'`, [id]
+    );
+    if (!reqRow.rows[0]) return res.status(404).json({ message: 'Сұрау табылмады' });
+    const r = reqRow.rows[0];
+
+    await pool.query(
+      `UPDATE group_change_requests SET status = 'rejected', reviewed_by = $1, moderator_comment = $2, updated_at = NOW() WHERE id = $3`,
+      [req.user.id, moderator_comment || null, id]
+    );
+
+    createNotification({
+      user_id: r.user_id,
+      type: 'achievement_rejected',
+      title: 'Топ ауыстыру бас тартылды',
+      message: moderator_comment
+        ? `«${r.requested_group}» топына ауысу бас тартылды. Себебі: ${moderator_comment}`
+        : `«${r.requested_group}» топына ауысу сұрауы бас тартылды`,
+      related_id: null,
+    }).catch(() => {});
+
+    res.json({ message: 'Бас тартылды' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Қате' });
+  }
+});
+
+// ===== ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ (публичный) =====
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(`
-      SELECT id, email, full_name, role, group_name, avatar_url, bio, 
-             telegram_username, created_at,
-             (SELECT COUNT(*)::int FROM achievements 
-              WHERE user_id = users.id AND status = 'approved') AS achievements_count
-      FROM users WHERE id = $1
+      SELECT id, full_name, role, group_name, avatar_url, bio, created_at,
+             (SELECT COUNT(*)::int FROM achievements WHERE user_id = users.id AND status = 'approved') AS achievements_count,
+             (SELECT COUNT(*)::int FROM friendships
+              WHERE (requester_id = users.id OR addressee_id = users.id) AND status = 'accepted') AS friends_count
+      FROM users WHERE id = $1 AND is_active = TRUE
     `, [id]);
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Пользователь не найден' });
-    }
+    if (result.rows.length === 0) return res.status(404).json({ message: 'Пайдаланушы табылмады' });
     res.json(result.rows[0]);
   } catch (error) {
-    console.error('Ошибка профиля:', error);
+    console.error(error);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
 
-// ===== СМЕНИТЬ РОЛЬ (только admin) =====
-// PATCH /api/users/:id/role
+// ===== СМЕНИТЬ РОЛЬ (admin) =====
 router.patch('/:id/role', authMiddleware, checkRole('admin'), async (req, res) => {
   try {
     const { id } = req.params;
     const { role } = req.body;
-
-    if (!['student', 'curator', 'admin'].includes(role)) {
-      return res.status(400).json({ message: 'Недопустимая роль' });
-    }
+    if (!['student', 'curator', 'admin'].includes(role)) return res.status(400).json({ message: 'Рұқсат етілмеген рөл' });
 
     const result = await pool.query(
-      `UPDATE users SET role = $1, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $2 
-       RETURNING id, email, full_name, role`,
+      `UPDATE users SET role = $1, updated_at = NOW() WHERE id = $2 RETURNING id, email, full_name, role`,
       [role, id]
     );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Пользователь не найден' });
-    }
-    res.json({ message: `Роль изменена на ${role}`, user: result.rows[0] });
+    if (result.rows.length === 0) return res.status(404).json({ message: 'Пайдаланушы табылмады' });
+    res.json({ message: `Рөл өзгертілді`, user: result.rows[0] });
   } catch (error) {
-    console.error('Ошибка смены роли:', error);
+    console.error(error);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });
 
-// ===== БЛОКИРОВКА / РАЗБЛОКИРОВКА (только admin) =====
-// PATCH /api/users/:id/toggle-active
+// ===== БЛОКИРОВКА / РАЗБЛОКИРОВКА (admin) =====
 router.patch('/:id/toggle-active', authMiddleware, checkRole('admin'), async (req, res) => {
   try {
     const { id } = req.params;
     const result = await pool.query(
-      `UPDATE users SET is_active = NOT is_active, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $1 RETURNING id, full_name, is_active`,
+      `UPDATE users SET is_active = NOT is_active, updated_at = NOW() WHERE id = $1 RETURNING id, full_name, is_active`,
       [id]
     );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'Пользователь не найден' });
-    }
-    res.json({
-      message: result.rows[0].is_active ? 'Разблокирован' : 'Заблокирован',
-      user: result.rows[0]
-    });
+    if (result.rows.length === 0) return res.status(404).json({ message: 'Пайдаланушы табылмады' });
+    res.json({ message: result.rows[0].is_active ? 'Белсендірілді' : 'Блокталды', user: result.rows[0] });
   } catch (error) {
-    console.error('Ошибка блокировки:', error);
+    console.error(error);
     res.status(500).json({ message: 'Ошибка сервера' });
   }
 });

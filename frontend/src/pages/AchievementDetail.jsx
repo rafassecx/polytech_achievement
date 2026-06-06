@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Heart, Search, FileText, Check, X, Send as TelegramIcon, ZoomIn } from 'lucide-react';
+import { ArrowLeft, Heart, Bookmark, Search, FileText, Check, X, Send as TelegramIcon, ZoomIn } from 'lucide-react';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useModal } from '../contexts/ModalContext';
@@ -33,6 +33,7 @@ export default function AchievementDetail() {
   const [submitting, setSubmitting] = useState(false);
   const [moderating, setModerating] = useState(false);
   const [lightbox, setLightbox] = useState(null);
+  const [bookmarked, setBookmarked] = useState(false);
 
   const load = async () => {
     try {
@@ -51,13 +52,30 @@ export default function AchievementDetail() {
     }
   };
 
+  const loadBookmark = async () => {
+    if (!user) return;
+    try {
+      const { data } = await api.get(`/bookmarks/check/${id}`);
+      setBookmarked(data.bookmarked);
+    } catch { /* тыныш */ }
+  };
+
   useEffect(() => { load(); }, [id]);
+  useEffect(() => { loadBookmark(); }, [id, user]);
 
   const toggleLike = async () => {
     if (!user) return navigate('/login');
     try {
       const { data } = await api.post(`/likes/${id}`);
       setLikeInfo(data);
+    } catch { /* тыныш */ }
+  };
+
+  const toggleBookmark = async () => {
+    if (!user) return navigate('/login');
+    try {
+      await api.post(`/bookmarks/${id}`);
+      setBookmarked((b) => !b);
     } catch { /* тыныш */ }
   };
 
@@ -252,17 +270,29 @@ export default function AchievementDetail() {
           </div>
         )}
 
-        {/* Лайк + жою — тек бекітілген постта */}
+        {/* Лайк + закладка + жою — тек бекітілген постта */}
         {showInteractions && (
           <div className="px-7 py-5 border-t border-white/10 flex items-center justify-between">
-            <button
-              onClick={toggleLike}
-              className={`btn-glass flex items-center gap-2 px-4 py-2 spring ${likeInfo.liked ? 'scale-95' : ''}`}
-              style={likeInfo.liked ? { color: '#ef4444', borderColor: 'rgba(239,68,68,0.4)' } : {}}
-            >
-              <Heart size={17} fill={likeInfo.liked ? '#ef4444' : 'none'} />
-              <span className="font-semibold text-sm">{likeInfo.count}</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={toggleLike}
+                className={`btn-glass flex items-center gap-2 px-4 py-2 spring ${likeInfo.liked ? 'scale-95' : ''}`}
+                style={likeInfo.liked ? { color: '#ef4444', borderColor: 'rgba(239,68,68,0.4)' } : {}}
+              >
+                <Heart size={17} fill={likeInfo.liked ? '#ef4444' : 'none'} />
+                <span className="font-semibold text-sm">{likeInfo.count}</span>
+              </button>
+              {user && achievement.status === 'approved' && (
+                <button
+                  onClick={toggleBookmark}
+                  title={bookmarked ? 'Таңдаулылардан алып тастау' : 'Таңдаулыларға қосу'}
+                  className="btn-glass flex items-center gap-1.5 px-4 py-2 spring"
+                  style={bookmarked ? { color: '#f59e0b', borderColor: 'rgba(245,158,11,0.4)' } : {}}
+                >
+                  <Bookmark size={17} fill={bookmarked ? '#f59e0b' : 'none'} />
+                </button>
+              )}
+            </div>
             {canDelete && (
               <button
                 onClick={deleteAchievement}

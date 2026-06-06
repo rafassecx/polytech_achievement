@@ -14,6 +14,8 @@ const botRoutes = require('./routes/bot');
 const notificationRoutes = require('./routes/notifications');
 const messageRoutes = require('./routes/messages');
 const statsRoutes = require('./routes/stats');
+const friendRoutes = require('./routes/friends');
+const bookmarkRoutes = require('./routes/bookmarks');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -35,6 +37,8 @@ app.use('/api/bot', botRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/friends', friendRoutes);
+app.use('/api/bookmarks', bookmarkRoutes);
 
 // Главная страница API
 app.get('/', (req, res) => {
