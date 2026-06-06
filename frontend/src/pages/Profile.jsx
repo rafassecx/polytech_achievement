@@ -5,8 +5,10 @@ import {
   Send, Link2, Unlink, LogOut,
   Sun, Moon, Lock, Eye, EyeOff,
   User, Info, Award, Bookmark, Users,
-  UserCheck, UserX, Clock, Share2,
+  UserCheck, UserX, Clock, Share2, Heart, MessageCircle,
 } from 'lucide-react';
+import { CATEGORY_LABELS } from '../lib/constants';
+import { CategoryBadgeIcon } from '../components/CategoryIcon';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useModal } from '../contexts/ModalContext';
@@ -71,6 +73,9 @@ export default function Profile() {
   // Список друзей
   const [friends, setFriends] = useState([]);
 
+  // Закладки
+  const [bookmarks, setBookmarks] = useState([]);
+
   // Поделиться
   const [copied, setCopied] = useState(false);
 
@@ -107,12 +112,20 @@ export default function Profile() {
     } catch { /* тыныш */ }
   };
 
+  const loadBookmarks = async () => {
+    try {
+      const { data } = await api.get('/bookmarks');
+      setBookmarks(data.bookmarks || []);
+    } catch { /* тыныш */ }
+  };
+
   useEffect(() => {
     loadProfile();
     loadGroupRequest();
     if (user) {
       loadFriendRequests();
       loadFriends();
+      loadBookmarks();
     }
   }, []);
 
@@ -527,31 +540,76 @@ export default function Profile() {
             )}
           </div>
 
-          {/* Жылдам сілтемелер */}
-          <div className="space-y-2">
-            <Link to="/my-achievements"
-              className="glass-panel p-4 flex items-center justify-between hover-lift">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-2xl flex items-center justify-center"
-                  style={{ background: 'rgba(99,102,241,0.12)' }}>
-                  <Award size={16} className="text-accent" />
-                </div>
-                <span className="text-sm font-medium text-theme">Менің жетістіктерім</span>
+          {/* Жылдам сілтеме — жетістіктерім */}
+          <Link to="/my-achievements"
+            className="glass-panel p-4 flex items-center justify-between hover-lift">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-2xl flex items-center justify-center"
+                style={{ background: 'rgba(99,102,241,0.12)' }}>
+                <Award size={16} className="text-accent" />
               </div>
-              <ChevronRight size={16} className="text-muted" />
-            </Link>
+              <span className="text-sm font-medium text-theme">Менің жетістіктерім</span>
+            </div>
+            <ChevronRight size={16} className="text-muted" />
+          </Link>
 
-            <Link to="/bookmarks"
-              className="glass-panel p-4 flex items-center justify-between hover-lift">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-2xl flex items-center justify-center"
-                  style={{ background: 'rgba(99,102,241,0.12)' }}>
-                  <Bookmark size={16} className="text-accent" />
-                </div>
-                <span className="text-sm font-medium text-theme">Таңдаулылар</span>
+          {/* Таңдаулылар секциясы */}
+          <div className="glass-panel p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-theme flex items-center gap-2">
+                <Bookmark size={16} className="text-accent" /> Таңдаулылар
+                <span className="badge ml-1">{bookmarks.length}</span>
+              </h3>
+              {bookmarks.length > 0 && (
+                <Link to="/bookmarks" className="text-xs text-accent hover:underline smooth">
+                  Барлығын көру
+                </Link>
+              )}
+            </div>
+            {bookmarks.length === 0 ? (
+              <div className="text-center py-4">
+                <p className="text-sm text-muted mb-2">Таңдаулылар жоқ</p>
+                <Link to="/" className="text-xs text-accent hover:underline">
+                  Жетістіктерді қарау
+                </Link>
               </div>
-              <ChevronRight size={16} className="text-muted" />
-            </Link>
+            ) : (
+              <div className="space-y-2">
+                {bookmarks.slice(0, 4).map((a) => (
+                  <Link to={`/achievements/${a.id}`} key={a.id}
+                    className="flex items-center gap-3 p-2.5 rounded-2xl hover:bg-white/10 smooth group">
+                    <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0"
+                      style={{ background: 'rgba(99,102,241,0.10)' }}>
+                      {a.preview_image
+                        ? <img src={a.preview_image} alt="" className="w-full h-full object-cover" />
+                        : <div className="w-full h-full flex items-center justify-center">
+                            <CategoryBadgeIcon category={a.category} size={16} />
+                          </div>
+                      }
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-medium text-theme truncate group-hover:text-accent smooth">
+                        {a.title}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted">
+                        <span className="flex items-center gap-0.5">
+                          <CategoryBadgeIcon category={a.category} size={9} />
+                          {CATEGORY_LABELS[a.category] || a.category}
+                        </span>
+                        <span className="flex items-center gap-0.5"><Heart size={9} /> {a.likes_count || 0}</span>
+                        <span className="flex items-center gap-0.5"><MessageCircle size={9} /> {a.comments_count || 0}</span>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+                {bookmarks.length > 4 && (
+                  <Link to="/bookmarks"
+                    className="block text-center text-xs text-accent hover:underline pt-1 smooth">
+                    + тағы {bookmarks.length - 4}
+                  </Link>
+                )}
+              </div>
+            )}
           </div>
         </>
       )}
