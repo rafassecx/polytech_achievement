@@ -78,4 +78,62 @@ const notifyAllCurators = async ({ achievement_id, title, author_name }) => {
   }
 };
 
-module.exports = { createNotification, notifyAllCurators, sendTelegramMessage };
+// Отправить Telegram-сообщение с inline-кнопками
+const sendTelegramWithButtons = async (telegramId, text, buttons) => {
+  if (!BOT_TOKEN || !telegramId) return null;
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: telegramId,
+        text,
+        parse_mode: 'HTML',
+        reply_markup: { inline_keyboard: buttons },
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data.ok ? data.result : null;
+  } catch {
+    return null;
+  }
+};
+
+// Ответить на callback_query (убрать "часики" у кнопки)
+const answerCallback = async (callbackQueryId, text = '') => {
+  if (!BOT_TOKEN) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/answerCallbackQuery`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ callback_query_id: callbackQueryId, text }),
+    });
+  } catch { /* тыныш */ }
+};
+
+// Отредактировать текст уже отправленного сообщения
+const editMessageText = async (chatId, messageId, text) => {
+  if (!BOT_TOKEN) return;
+  try {
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/editMessageText`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        message_id: messageId,
+        text,
+        parse_mode: 'HTML',
+      }),
+    });
+  } catch { /* тыныш */ }
+};
+
+module.exports = {
+  createNotification,
+  notifyAllCurators,
+  sendTelegramMessage,
+  sendTelegramWithButtons,
+  answerCallback,
+  editMessageText,
+};

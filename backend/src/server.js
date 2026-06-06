@@ -17,6 +17,7 @@ const messageRoutes = require('./routes/messages');
 const statsRoutes = require('./routes/stats');
 const friendRoutes = require('./routes/friends');
 const bookmarkRoutes = require('./routes/bookmarks');
+const { answerCallback, editMessageText } = require('./utils/notifications');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -40,6 +41,72 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/friends', friendRoutes);
 app.use('/api/bookmarks', bookmarkRoutes);
+
+// Telegram webhook — принимает callback_query от inline-кнопок
+app.post('/api/tg-hook', async (req, res) => {
+  res.sendStatus(200); // сразу отвечаем Telegram'у
+
+  const update = req.body;
+  const cbq = update?.callback_query;
+  if (!cbq) return;
+
+  const { id: callbackId, data, from, message } = cbq;
+  if (!data || !data.startsWith('fa_')) return;
+
+  const [, action, friendshipIdStr] = data.split('_');
+  const friendshipId = parseInt(friendshipIdStr);
+  if (isNaN(friendshipId)) {
+    await answerCallback(callbackId, 'Қате');
+    return;
+  }
+
+  try {
+    // Кто нажал кнопку — находим по telegram_id
+    const userRes = await pool.query(
+      'SELECT id, full_name FROM users WHERE telegram_id = $1',
+      [String(from.id)]
+    );
+    if (userRes.rows.length === 0) {
+      await answerCallback(callbackId, 'Пайдаланушы табылмады');
+      return;
+    }
+    const me = userRes.rows[0];
+
+    if (action === 'accept') {
+      const upd = await pool.query(`
+        UPDATE friendships SET status = 'accepted'
+        WHERE id = $1 AND addressee_id = $2 AND status = 'pending'
+        RETURNING requester_id
+      `, [friendshipId, me.id]);
+
+      if (upd.rows.length === 0) {
+        await answerCallback(callbackId, 'Сұрау табылмады немесе бұрын өңделді');
+        return;
+      }
+
+      await answerCallback(callbackId, '✅ Достық қабылданды!');
+      await editMessageText(
+        from.id,
+        message.message_id,
+        `✅ <b>${me.full_name}</b> достық сұрауын қабылдады`
+      );
+    } else if (action === 'reject') {
+      await pool.query(
+        `DELETE FROM friendships WHERE id = $1 AND (addressee_id = $2 OR requester_id = $2)`,
+        [friendshipId, me.id]
+      );
+      await answerCallback(callbackId, 'Бас тартылды');
+      await editMessageText(
+        from.id,
+        message.message_id,
+        `❌ Достық сұрауы бас тартылды`
+      );
+    }
+  } catch (err) {
+    console.error('tg-hook error:', err.message);
+    await answerCallback(callbackId, 'Сервер қатесі');
+  }
+});
 
 // Главная страница API
 app.get('/', (req, res) => {

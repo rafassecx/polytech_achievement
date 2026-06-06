@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
-  UserPlus, UserMinus, UserCheck, Clock, Link2, Check,
+  UserPlus, UserCheck, Clock, Link2, Check,
   Award, Users, Heart, MessageCircle, ArrowLeft, MessageSquare, X,
 } from 'lucide-react';
 import api from '../lib/api';
@@ -12,13 +12,18 @@ import { CategoryBadgeIcon, CategoryCardIcon } from '../components/CategoryIcon'
 
 const ROLE_LABELS = { student: 'Студент', curator: 'Куратор', admin: 'Admin' };
 
-function Avatar({ name, src, size = 20 }) {
-  const cls = `w-${size} h-${size} rounded-3xl object-cover`;
-  if (src) return <img src={src} alt={name} className={cls} />;
+function ProfileAvatar({ name, src }) {
+  if (src) {
+    return (
+      <img src={src} alt={name}
+        className="w-16 h-16 rounded-2xl object-cover shrink-0"
+        style={{ boxShadow: '0 4px 16px rgba(99,102,241,0.25)' }} />
+    );
+  }
   return (
     <div
-      className={`${cls} flex items-center justify-center text-white font-bold text-3xl`}
-      style={{ background: 'linear-gradient(135deg, #6366f1, #a78bfa)' }}
+      className="w-16 h-16 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shrink-0"
+      style={{ background: 'linear-gradient(135deg, #6366f1, #a78bfa)', boxShadow: '0 4px 16px rgba(99,102,241,0.25)' }}
     >
       {name?.charAt(0)?.toUpperCase() || '?'}
     </div>
@@ -26,36 +31,40 @@ function Avatar({ name, src, size = 20 }) {
 }
 
 function SmallAvatar({ name, src }) {
-  if (src) return <img src={src} alt={name} className="w-9 h-9 rounded-2xl object-cover shrink-0" />;
+  if (src) return <img src={src} alt={name} className="w-9 h-9 rounded-xl object-cover shrink-0" />;
   return (
-    <div className="w-9 h-9 rounded-2xl flex items-center justify-center text-white text-sm font-bold shrink-0"
+    <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-sm font-bold shrink-0"
       style={{ background: 'linear-gradient(135deg, #6366f1, #a78bfa)' }}>
       {name?.charAt(0)?.toUpperCase() || '?'}
     </div>
   );
 }
 
+// Кнопка дружбы — без hover-флика: pending_sent показывает Clock + отдельный X
 function FriendButton({ status, direction, friendshipId, onAction, loading }) {
-  const [hoverCancel, setHoverCancel] = useState(false);
-
   if (status === 'none') return (
     <button onClick={() => onAction('request')} disabled={loading}
       className="btn-primary px-4 py-2 rounded-xl text-sm flex items-center gap-1.5">
-      <UserPlus size={15} /> Достыққа қосу
+      <UserPlus size={14} /> Достыққа қосу
     </button>
   );
 
   if (status === 'pending' && direction === 'sent') return (
-    <button
-      onClick={() => onAction('cancel', friendshipId)}
-      disabled={loading}
-      onMouseEnter={() => setHoverCancel(true)}
-      onMouseLeave={() => setHoverCancel(false)}
-      className="btn-glass px-4 py-2 text-sm flex items-center gap-1.5 smooth"
-      style={hoverCancel ? { color: 'var(--clr-danger)', borderColor: 'rgba(239,68,68,0.35)' } : {}}
-    >
-      {hoverCancel ? <><X size={15} /> Бас тарту</> : <><Clock size={15} /> Сұрау жіберілді</>}
-    </button>
+    <div className="flex items-center gap-1.5">
+      <span className="btn-glass px-3 py-2 text-sm flex items-center gap-1.5 cursor-default"
+        style={{ opacity: 0.85 }}>
+        <Clock size={14} /> Сұрау жіберілді
+      </span>
+      <button
+        onClick={() => onAction('cancel', friendshipId)}
+        disabled={loading}
+        title="Сұрауды бас тарту"
+        className="btn-glass px-2.5 py-2 text-sm flex items-center justify-center smooth hover:bg-red-500/15"
+        style={{ color: 'var(--clr-danger)', borderColor: 'rgba(239,68,68,0.3)' }}
+      >
+        <X size={15} />
+      </button>
+    </div>
   );
 
   if (status === 'pending' && direction === 'received') return (
@@ -63,11 +72,11 @@ function FriendButton({ status, direction, friendshipId, onAction, loading }) {
       <button onClick={() => onAction('accept', friendshipId)} disabled={loading}
         className="btn-primary px-4 py-2 rounded-xl text-sm flex items-center gap-1.5"
         style={{ background: '#059669', boxShadow: '0 4px 14px rgba(5,150,105,0.3)' }}>
-        <UserCheck size={15} /> Қабылдау
+        <UserCheck size={14} /> Қабылдау
       </button>
       <button onClick={() => onAction('reject', friendshipId)} disabled={loading}
-        className="btn-glass px-4 py-2 text-sm" style={{ color: 'var(--clr-danger)' }}>
-        Бас тарту
+        className="btn-glass px-3 py-2 text-sm" style={{ color: 'var(--clr-danger)' }}>
+        <X size={15} />
       </button>
     </div>
   );
@@ -76,7 +85,7 @@ function FriendButton({ status, direction, friendshipId, onAction, loading }) {
     <button onClick={() => onAction('unfriend')} disabled={loading}
       className="btn-glass px-4 py-2 text-sm flex items-center gap-1.5"
       style={{ color: 'var(--clr-success)', borderColor: 'rgba(16,185,129,0.35)' }}>
-      <UserCheck size={15} /> Дос
+      <UserCheck size={14} /> Дос
     </button>
   );
 
@@ -159,7 +168,7 @@ export default function PublicProfile() {
         await api.delete(`/friends/${id}`);
         setFriendStatus({ status: 'none' });
         setProfile(prev => ({ ...prev, friends_count: Math.max(0, (prev.friends_count || 1) - 1) }));
-        setFriends(friends.filter(f => String(f.id) !== String(me.id)));
+        setFriends(friends.filter(f => String(f.id) !== String(me?.id)));
       }
     } catch { /* тыныш */ }
     setFriendLoading(false);
@@ -173,7 +182,9 @@ export default function PublicProfile() {
   };
 
   const openChat = () => {
-    navigate('/chat', { state: { openChatWith: { id: parseInt(id), full_name: profile.full_name, avatar_url: profile.avatar_url } } });
+    navigate('/chat', {
+      state: { openChatWith: { id: parseInt(id), full_name: profile.full_name, avatar_url: profile.avatar_url } }
+    });
   };
 
   if (loading) return <div className="text-center text-muted py-20">Жүктелуде...</div>;
@@ -186,90 +197,96 @@ export default function PublicProfile() {
 
   return (
     <div className="max-w-3xl mx-auto px-5 py-8">
-      <Link to="/" className="text-muted hover:text-theme text-sm inline-flex items-center gap-1.5 mb-6 smooth">
+      <Link to="/" className="text-muted hover:text-theme text-sm inline-flex items-center gap-1.5 mb-5 smooth">
         <ArrowLeft size={14} /> Артқа
       </Link>
 
-      {/* Профиль тақырыбы */}
-      <div className="glass-card p-7 mb-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-          <Avatar name={profile.full_name} src={profile.avatar_url} size={20} />
+      {/* ── Профиль картасы ── */}
+      <div className="glass-card p-6 mb-6">
 
-          <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-bold text-theme leading-tight">{profile.full_name}</h1>
-            <div className="flex flex-wrap items-center gap-2 mt-2">
+        {/* Аватар + аты */}
+        <div className="flex items-center gap-4 mb-4">
+          <ProfileAvatar name={profile.full_name} src={profile.avatar_url} />
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold text-theme leading-tight">{profile.full_name}</h1>
+            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
               <span className="badge">{ROLE_LABELS[profile.role] || profile.role}</span>
               {profile.group_name && (
-                <Link to={`/groups/${encodeURIComponent(profile.group_name)}`} className="badge hover:opacity-80 smooth">
+                <Link
+                  to={`/groups/${encodeURIComponent(profile.group_name)}`}
+                  className="badge hover:opacity-75 smooth"
+                >
                   {profile.group_name}
                 </Link>
               )}
             </div>
-            {profile.bio && (
-              <p className="text-sm text-muted mt-2 leading-relaxed">{profile.bio}</p>
-            )}
-
-            {/* Статистика */}
-            <div className="flex items-center gap-5 mt-3 flex-wrap">
-              <div className="flex items-center gap-1.5 text-sm">
-                <Award size={14} className="text-accent" />
-                <span className="font-semibold text-theme">{profile.achievements_count}</span>
-                <span className="text-muted">жетістік</span>
-              </div>
-              <button
-                onClick={() => setFriendsOpen(!friendsOpen)}
-                className="flex items-center gap-1.5 text-sm hover:text-accent smooth"
-              >
-                <Users size={14} className="text-accent" />
-                <span className="font-semibold text-theme">{profile.friends_count || 0}</span>
-                <span className="text-muted">дос</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Кнопки действий */}
-          <div className="flex flex-wrap gap-2 shrink-0">
-            {isOwnProfile ? (
-              <Link to="/profile" className="btn-glass px-4 py-2 text-sm flex items-center gap-1.5">
-                Профильді өзгерту
-              </Link>
-            ) : me ? (
-              <>
-                <FriendButton
-                  status={friendStatus.status}
-                  direction={friendStatus.direction}
-                  friendshipId={friendStatus.friendship_id}
-                  onAction={handleFriendAction}
-                  loading={friendLoading}
-                />
-                <button onClick={openChat}
-                  className="btn-glass px-4 py-2 text-sm flex items-center gap-1.5">
-                  <MessageSquare size={14} /> Хабарлама
-                </button>
-              </>
-            ) : null}
-
-            <button
-              onClick={shareProfile}
-              className="btn-glass px-4 py-2 text-sm flex items-center gap-1.5 smooth"
-              style={copied ? { color: 'var(--clr-success)', borderColor: 'rgba(16,185,129,0.35)' } : {}}
-            >
-              {copied ? <><Check size={14} /> Көшірілді</> : <><Link2 size={14} /> Бөлісу</>}
-            </button>
           </div>
         </div>
 
-        {/* Список друзей (разворачивается) */}
+        {/* Био */}
+        {profile.bio && (
+          <p className="text-sm text-muted mb-4 leading-relaxed">{profile.bio}</p>
+        )}
+
+        {/* Статистика */}
+        <div className="flex items-center gap-5 mb-4">
+          <div className="flex items-center gap-1.5 text-sm">
+            <Award size={14} className="text-accent" />
+            <span className="font-semibold text-theme">{profile.achievements_count}</span>
+            <span className="text-muted">жетістік</span>
+          </div>
+          <button
+            onClick={() => setFriendsOpen(!friendsOpen)}
+            className="flex items-center gap-1.5 text-sm hover:text-accent smooth"
+          >
+            <Users size={14} className="text-accent" />
+            <span className="font-semibold text-theme">{profile.friends_count || 0}</span>
+            <span className="text-muted">дос</span>
+          </button>
+        </div>
+
+        {/* Кнопки действий */}
+        <div className="flex flex-wrap gap-2">
+          {isOwnProfile ? (
+            <Link to="/profile" className="btn-glass px-4 py-2 text-sm flex items-center gap-1.5">
+              Профильді өзгерту
+            </Link>
+          ) : me ? (
+            <>
+              <FriendButton
+                status={friendStatus.status}
+                direction={friendStatus.direction}
+                friendshipId={friendStatus.friendship_id}
+                onAction={handleFriendAction}
+                loading={friendLoading}
+              />
+              <button onClick={openChat}
+                className="btn-glass px-4 py-2 text-sm flex items-center gap-1.5">
+                <MessageSquare size={14} /> Хабарлама
+              </button>
+            </>
+          ) : null}
+
+          <button
+            onClick={shareProfile}
+            className="btn-glass px-4 py-2 text-sm flex items-center gap-1.5 smooth"
+            style={copied ? { color: 'var(--clr-success)', borderColor: 'rgba(16,185,129,0.35)' } : {}}
+          >
+            {copied ? <><Check size={14} /> Көшірілді</> : <><Link2 size={14} /> Бөлісу</>}
+          </button>
+        </div>
+
+        {/* Список друзей */}
         {friendsOpen && (
-          <div className="mt-5 pt-5 border-t border-white/10">
-            <h3 className="text-sm font-semibold text-theme mb-3">Достар ({friends.length})</h3>
+          <div className="mt-5 pt-4 border-t border-white/10">
+            <p className="text-sm font-semibold text-theme mb-3">Достар ({friends.length})</p>
             {friends.length === 0 ? (
               <p className="text-sm text-muted">Достар жоқ</p>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {friends.map((f) => (
                   <Link to={`/users/${f.id}`} key={f.id}
-                    className="flex items-center gap-2.5 p-2.5 rounded-2xl hover:bg-white/10 smooth">
+                    className="flex items-center gap-2 p-2 rounded-xl hover:bg-white/10 smooth">
                     <SmallAvatar name={f.full_name} src={f.avatar_url} />
                     <div className="min-w-0">
                       <div className="text-xs font-medium text-theme truncate">{f.full_name}</div>
@@ -300,23 +317,21 @@ export default function PublicProfile() {
                 {a.preview_image ? (
                   <img src={a.preview_image} alt={a.title} className="w-full h-36 object-cover shrink-0" />
                 ) : (
-                  <div className="w-full h-36 shrink-0">
-                    <CategoryCardIcon category={a.category} />
-                  </div>
+                  <div className="w-full h-36 shrink-0"><CategoryCardIcon category={a.category} /></div>
                 )}
                 <div className="p-4 flex flex-col flex-1">
                   <div className="badge mb-2 flex items-center gap-1.5 w-fit">
                     <CategoryBadgeIcon category={a.category} size={11} />
                     {CATEGORY_LABELS[a.category] || a.category}
                   </div>
-                  <h3 className="font-semibold text-theme text-sm leading-snug mb-1 line-clamp-2 group-hover:text-accent smooth">
+                  <h3 className="font-semibold text-theme text-sm leading-snug line-clamp-2 group-hover:text-accent smooth">
                     {a.title}
                   </h3>
                   <div className="mt-auto flex items-center justify-between text-xs text-muted pt-2 border-t border-white/20">
-                    <span className="text-[10px] text-muted">
+                    <span className="text-[10px]">
                       {a.event_date ? new Date(a.event_date).toLocaleDateString('kk-KZ') : ''}
                     </span>
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-2">
                       <span className="flex items-center gap-0.5"><Heart size={10} /> {a.likes_count || 0}</span>
                       <span className="flex items-center gap-0.5"><MessageCircle size={10} /> {a.comments_count || 0}</span>
                     </div>

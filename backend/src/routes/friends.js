@@ -1,7 +1,7 @@
 const express = require('express');
 const pool = require('../config/db');
 const { authMiddleware } = require('../middleware/auth');
-const { createNotification } = require('../utils/notifications');
+const { createNotification, sendTelegramWithButtons } = require('../utils/notifications');
 
 const router = express.Router();
 router.use(authMiddleware);
@@ -80,18 +80,36 @@ router.post('/request/:userId', async (req, res) => {
     `, [me, other]);
     if (exists.rows.length > 0) return res.status(400).json({ message: 'Сұрау бұрын жіберілген' });
 
-    await pool.query(
-      `INSERT INTO friendships (requester_id, addressee_id) VALUES ($1, $2)`,
+    const ins = await pool.query(
+      `INSERT INTO friendships (requester_id, addressee_id) VALUES ($1, $2) RETURNING id`,
       [me, other]
     );
+    const friendshipId = ins.rows[0].id;
 
     const meInfo = await pool.query('SELECT full_name FROM users WHERE id = $1', [me]);
+    const senderName = meInfo.rows[0]?.full_name || 'Пайдаланушы';
+
+    // DB-уведомление
     createNotification({
       user_id: other,
       type: 'new_pending',
       title: 'Достық сұрауы',
-      message: `${meInfo.rows[0]?.full_name} сізді достарына қосқысы келеді`,
+      message: `${senderName} сізді достарына қосқысы келеді`,
       related_id: null,
+      send_telegram: false, // telegram'ды inline-батырмалармен жібереміз
+    }).catch(() => {});
+
+    // Telegram inline keyboard — асинхронно, не блокируем ответ
+    pool.query('SELECT telegram_id FROM users WHERE id = $1', [other]).then(({ rows }) => {
+      const tgId = rows[0]?.telegram_id;
+      if (tgId) {
+        const text = `🤝 <b>Достық сұрауы</b>\n${senderName} сізді достарына қосқысы келеді.`;
+        const buttons = [[
+          { text: '✅ Қабылдау', callback_data: `fa_accept_${friendshipId}` },
+          { text: '❌ Бас тарту', callback_data: `fa_reject_${friendshipId}` },
+        ]];
+        sendTelegramWithButtons(tgId, text, buttons).catch(() => {});
+      }
     }).catch(() => {});
 
     res.status(201).json({ message: 'Сұрау жіберілді' });
