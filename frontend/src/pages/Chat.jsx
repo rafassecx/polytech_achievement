@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { SquarePen, Users, MessageSquare, SendHorizontal, X, Check, CheckCheck } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -77,6 +77,7 @@ function ConvItem({ active, onClick, avatar, name, sub, unread, lastMsg, lastAt 
 
 export default function Chat() {
   const { user } = useAuth();
+  const location = useLocation();
 
   // Белсенді чат: { type: 'direct'|'group', id, name, avatar?, groupName? }
   const [activeChat, setActiveChat] = useState(null);
@@ -108,6 +109,17 @@ export default function Chat() {
   useEffect(() => {
     loadConversations();
   }, [loadConversations]);
+
+  // Профиль бетінен "Хабарлама жіберу" арқылы ашу
+  useEffect(() => {
+    if (location.state?.openChatWith) {
+      openDirectChat(location.state.openChatWith);
+      window.history.replaceState({}, document.title);
+    } else if (location.state?.openGroup) {
+      openGroupChat(location.state.openGroup);
+      window.history.replaceState({}, document.title);
+    }
+  }, []);
 
   // Хабарламаларды жүктеу
   const loadMessages = useCallback(async (chat) => {
@@ -212,7 +224,9 @@ export default function Chat() {
           )}
           <div className={`flex items-end gap-2 mb-2 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}>
             {!isMine && (
-              <Avatar name={m.sender_name} src={m.sender_avatar} size={8} />
+              <Link to={`/users/${m.sender_id}`} className="shrink-0 hover:opacity-80 smooth">
+                <Avatar name={m.sender_name} src={m.sender_avatar} size={8} />
+              </Link>
             )}
             <div className={`max-w-[72%] ${isMine ? 'items-end' : 'items-start'} flex flex-col`}>
               {!isMine && activeChat?.type === 'group' && (
@@ -360,12 +374,14 @@ export default function Chat() {
               {/* Тақырып жолағы */}
               <div className="px-4 py-3 md:py-4 border-b border-white/10 flex items-center gap-3">
                 {activeChat.type === 'group' ? (
-                  <div
-                    className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
-                    style={{ background: 'rgba(99,102,241,0.15)' }}
-                  >
-                    <Users size={18} className="text-accent" />
-                  </div>
+                  <Link to={`/groups/${encodeURIComponent(activeChat.groupName)}`} className="shrink-0">
+                    <div
+                      className="w-10 h-10 rounded-2xl flex items-center justify-center hover:opacity-80 smooth"
+                      style={{ background: 'rgba(99,102,241,0.15)' }}
+                    >
+                      <Users size={18} className="text-accent" />
+                    </div>
+                  </Link>
                 ) : (
                   <Link to={`/users/${activeChat.id}`} className="shrink-0">
                     <Avatar name={activeChat.name} src={activeChat.avatar} size={10} />
@@ -377,7 +393,9 @@ export default function Chat() {
                       {activeChat.name}
                     </Link>
                   ) : (
-                    <div className="text-sm font-semibold text-theme truncate">{activeChat.name}</div>
+                    <Link to={`/groups/${encodeURIComponent(activeChat.groupName)}`} className="text-sm font-semibold text-theme hover:text-accent smooth block truncate">
+                      {activeChat.name}
+                    </Link>
                   )}
                   <div className="text-xs text-muted">
                     {activeChat.type === 'group' ? 'Топтық чат' : 'Жеке хат'}

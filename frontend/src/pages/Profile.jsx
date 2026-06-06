@@ -68,6 +68,9 @@ export default function Profile() {
   const [friendRequests, setFriendRequests] = useState([]);
   const [processingFriend, setProcessingFriend] = useState(null);
 
+  // Список друзей
+  const [friends, setFriends] = useState([]);
+
   // Поделиться
   const [copied, setCopied] = useState(false);
 
@@ -97,10 +100,20 @@ export default function Profile() {
     } catch { /* тыныш */ }
   };
 
+  const loadFriends = async () => {
+    try {
+      const { data } = await api.get('/friends');
+      setFriends(data.friends || []);
+    } catch { /* тыныш */ }
+  };
+
   useEffect(() => {
     loadProfile();
     loadGroupRequest();
-    if (user) loadFriendRequests();
+    if (user) {
+      loadFriendRequests();
+      loadFriends();
+    }
   }, []);
 
   const handleSave = async (e) => {
@@ -474,6 +487,42 @@ export default function Profile() {
                   className="btn-primary px-5 py-2 rounded-xl text-sm flex items-center gap-2">
                   <Link2 size={14} /> {generatingCode ? 'Жасалуда...' : 'Байланыстыру коды'}
                 </button>
+              </div>
+            )}
+          </div>
+
+          {/* Достар тізімі */}
+          <div className="glass-panel p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-semibold text-theme flex items-center gap-2">
+                <Users size={16} className="text-accent" /> Достарым
+                <span className="badge ml-1">{friends.length}</span>
+              </h3>
+              <Link to={`/users/${user?.id}`} className="text-xs text-accent hover:underline smooth">
+                Барлығын көру
+              </Link>
+            </div>
+            {friends.length === 0 ? (
+              <p className="text-sm text-muted">Достар жоқ. Достыққа қосу үшін профильдерге кіріңіз.</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                {friends.slice(0, 6).map((f) => (
+                  <Link to={`/users/${f.id}`} key={f.id}
+                    className="flex items-center gap-2.5 p-2.5 rounded-2xl hover:bg-white/10 smooth">
+                    {f.avatar_url ? (
+                      <img src={f.avatar_url} alt="" className="w-8 h-8 rounded-xl object-cover shrink-0" />
+                    ) : (
+                      <div className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold shrink-0"
+                        style={{ background: 'linear-gradient(135deg, #6366f1, #a78bfa)' }}>
+                        {f.full_name?.charAt(0) || '?'}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <div className="text-xs font-medium text-theme truncate">{f.full_name}</div>
+                      {f.group_name && <div className="text-[10px] text-muted truncate">{f.group_name}</div>}
+                    </div>
+                  </Link>
+                ))}
               </div>
             )}
           </div>

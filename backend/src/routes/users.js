@@ -305,6 +305,31 @@ router.patch('/group-requests/:id/reject', authMiddleware, checkRole('curator', 
   }
 });
 
+// ===== УЧАСТНИКИ ГРУППЫ (публичный) =====
+router.get('/group/:groupName', async (req, res) => {
+  const { groupName } = req.params;
+  try {
+    const result = await pool.query(`
+      SELECT id, full_name, role, avatar_url,
+             (SELECT COUNT(*)::int FROM achievements WHERE user_id = users.id AND status = 'approved') AS achievements_count
+      FROM users
+      WHERE group_name = $1 AND is_active = TRUE
+      ORDER BY full_name
+    `, [groupName]);
+
+    const total = result.rows.reduce((s, m) => s + (m.achievements_count || 0), 0);
+    res.json({
+      group_name: groupName,
+      members: result.rows,
+      member_count: result.rows.length,
+      total_achievements: total,
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Қате' });
+  }
+});
+
 // ===== ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ (публичный) =====
 router.get('/:id', async (req, res) => {
   try {
@@ -332,6 +357,25 @@ router.get('/:id', async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Ошибка сервера' });
+  }
+});
+
+// ===== СПИСОК ДРУЗЕЙ ПОЛЬЗОВАТЕЛЯ (публичный) =====
+router.get('/:id/friends', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(`
+      SELECT u.id, u.full_name, u.avatar_url, u.role, u.group_name,
+             (SELECT COUNT(*)::int FROM achievements WHERE user_id = u.id AND status = 'approved') AS achievements_count
+      FROM friendships f
+      JOIN users u ON u.id = CASE WHEN f.requester_id = $1::int THEN f.addressee_id ELSE f.requester_id END
+      WHERE (f.requester_id = $1::int OR f.addressee_id = $1::int) AND f.status = 'accepted'
+        AND u.is_active = TRUE
+      ORDER BY u.full_name
+    `, [id]);
+    res.json({ friends: result.rows });
+  } catch (err) {
+    res.json({ friends: [] });
   }
 });
 

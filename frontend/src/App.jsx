@@ -11,6 +11,7 @@ import AddAchievement from './pages/AddAchievement';
 import AchievementDetail from './pages/AchievementDetail';
 import Profile from './pages/Profile';
 import PublicProfile from './pages/PublicProfile';
+import GroupProfile from './pages/GroupProfile';
 import MyAchievements from './pages/MyAchievements';
 import BookmarksPage from './pages/BookmarksPage';
 import Moderation from './pages/Moderation';
@@ -34,6 +35,7 @@ function App() {
               <Route path="/leaderboard" element={<Leaderboard />} />
               <Route path="/achievements/:id" element={<AchievementDetail />} />
               <Route path="/users/:id" element={<PublicProfile />} />
+              <Route path="/groups/:groupName" element={<GroupProfile />} />
               <Route path="/add" element={<ProtectedRoute><AddAchievement /></ProtectedRoute>} />
               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/my-achievements" element={<ProtectedRoute><MyAchievements /></ProtectedRoute>} />

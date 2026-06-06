@@ -102,54 +102,61 @@ export default function Leaderboard() {
       ) : (
         <div className="space-y-3">
           {students.map((s, i) => (
-            <div
-              key={s.id}
-              className={`glass-card p-4 flex items-center gap-4 hover-lift ${
-                i === 0 ? 'ring-2 ring-amber-400/40' : ''
-              }`}
-            >
-              {/* Орын */}
-              <div className="w-10 text-center shrink-0">
-                {i < 3 ? (
-                  <span className="text-2xl">{MEDALS[i]}</span>
-                ) : (
-                  <span className="text-lg font-bold text-muted">{i + 1}</span>
-                )}
-              </div>
-
-              {/* Аватар */}
-              <Avatar name={s.full_name} src={s.avatar_url} />
-
-              {/* Аты / топ */}
-              <div className="flex-1 min-w-0">
-                <div className="font-semibold text-theme text-sm truncate">{s.full_name}</div>
-                {s.group_name && (
-                  <div className="text-xs text-muted mt-0.5">{s.group_name}</div>
-                )}
-                {/* Санат таратылуы */}
-                <div className="flex gap-2 mt-1.5 flex-wrap">
-                  {['academic', 'sport', 'cultural', 'social', 'other'].map((cat) =>
-                    s[cat] > 0 ? (
-                      <span key={cat} className="text-xs text-muted flex items-center gap-0.5">
-                        <CategoryBadgeIcon category={cat} size={11} />
-                        {s[cat]}
-                      </span>
-                    ) : null
+            <Link to={`/users/${s.id}`} key={s.id} className="block group">
+              <div
+                className={`glass-card p-4 flex items-center gap-4 hover-lift ${
+                  i === 0 ? 'ring-2 ring-amber-400/40' : ''
+                }`}
+              >
+                {/* Орын */}
+                <div className="w-10 text-center shrink-0">
+                  {i < 3 ? (
+                    <span className="text-2xl">{MEDALS[i]}</span>
+                  ) : (
+                    <span className="text-lg font-bold text-muted">{i + 1}</span>
                   )}
                 </div>
-              </div>
 
-              {/* Жетістік саны */}
-              <div className="shrink-0 text-center">
-                <div
-                  className="text-2xl font-bold"
-                  style={{ color: i === 0 ? '#f59e0b' : i === 1 ? '#94a3b8' : i === 2 ? '#cd7c2f' : 'var(--clr-accent)' }}
-                >
-                  {s.total}
+                {/* Аватар */}
+                <Avatar name={s.full_name} src={s.avatar_url} />
+
+                {/* Аты / топ */}
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold text-theme text-sm truncate group-hover:text-accent smooth">{s.full_name}</div>
+                  {s.group_name && (
+                    <Link
+                      to={`/groups/${encodeURIComponent(s.group_name)}`}
+                      onClick={(e) => e.stopPropagation()}
+                      className="text-xs text-muted hover:text-accent smooth mt-0.5 inline-block"
+                    >
+                      {s.group_name}
+                    </Link>
+                  )}
+                  {/* Санат таратылуы */}
+                  <div className="flex gap-2 mt-1.5 flex-wrap">
+                    {['academic', 'sport', 'cultural', 'social', 'other'].map((cat) =>
+                      s[cat] > 0 ? (
+                        <span key={cat} className="text-xs text-muted flex items-center gap-0.5">
+                          <CategoryBadgeIcon category={cat} size={11} />
+                          {s[cat]}
+                        </span>
+                      ) : null
+                    )}
+                  </div>
                 </div>
-                <div className="text-[10px] text-muted">жетістік</div>
+
+                {/* Жетістік саны */}
+                <div className="shrink-0 text-center">
+                  <div
+                    className="text-2xl font-bold"
+                    style={{ color: i === 0 ? '#f59e0b' : i === 1 ? '#94a3b8' : i === 2 ? '#cd7c2f' : 'var(--clr-accent)' }}
+                  >
+                    {s.total}
+                  </div>
+                  <div className="text-[10px] text-muted">жетістік</div>
+                </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}
