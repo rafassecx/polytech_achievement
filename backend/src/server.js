@@ -200,6 +200,50 @@ async function handleTelegramUpdate(update) {
   }
 }
 
+// Telegram message-reply өңдеу (ForceReply жауаптары)
+async function handleTelegramMessage(msg) {
+  // Тек reply-хабарламалар ғана бізге қажет
+  if (!msg.reply_to_message || !msg.text) return;
+
+  const replyToId = msg.reply_to_message.message_id;
+  const chatId = msg.chat.id;
+
+  try {
+    // Контексті табамыз
+    const ctx = await pool.query(
+      'SELECT app_sender_id, app_receiver_id FROM tg_reply_context WHERE tg_message_id = $1 AND tg_chat_id = $2',
+      [replyToId, chatId]
+    );
+    if (ctx.rows.length === 0) return;
+
+    const { app_sender_id, app_receiver_id } = ctx.rows[0];
+
+    // Кім жазып жатыр — оның app id-ін Telegram id арқылы табамыз
+    const userRes = await pool.query(
+      'SELECT id FROM users WHERE telegram_id = $1',
+      [String(msg.from.id)]
+    );
+    if (userRes.rows.length === 0) return;
+    const replyUserId = userRes.rows[0].id;
+
+    // Жауапты кімге жіберу керек: контексттегі app_sender_id (хабарлама жіберген адам)
+    const toUserId = String(replyUserId) === String(app_receiver_id) ? app_sender_id : app_receiver_id;
+
+    await pool.query(
+      `INSERT INTO messages (sender_id, receiver_id, content) VALUES ($1, $2, $3)`,
+      [replyUserId, toUserId, msg.text.trim()]
+    );
+
+    // Контексті жойып тастаймыз (бір рет қолданылады)
+    await pool.query(
+      'DELETE FROM tg_reply_context WHERE tg_message_id = $1 AND tg_chat_id = $2',
+      [replyToId, chatId]
+    );
+  } catch (err) {
+    console.error('tg message reply error:', err.message);
+  }
+}
+
 // Polling — домен болмаса да жұмыс істейді
 async function startPolling() {
   const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -215,8 +259,9 @@ async function startPolling() {
 
   const poll = async () => {
     try {
+      const allowed = JSON.stringify(['callback_query', 'message']);
       const res = await fetch(
-        `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${offset}&timeout=25&allowed_updates=["callback_query"]`,
+        `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${offset}&timeout=25&allowed_updates=${encodeURIComponent(allowed)}`,
         { signal: AbortSignal.timeout(30000) }
       );
       if (!res.ok) { setTimeout(poll, 5000); return; }
@@ -224,11 +269,15 @@ async function startPolling() {
       if (ok && result.length > 0) {
         for (const update of result) {
           offset = update.update_id + 1;
-          handleTelegramUpdate(update).catch(() => {});
+          if (update.callback_query) {
+            handleTelegramUpdate(update).catch(() => {});
+          } else if (update.message) {
+            handleTelegramMessage(update.message).catch(() => {});
+          }
         }
       }
     } catch { /* timeout немесе желі қатесі */ }
-    poll(); // рекурсия — тынымсыз сұрайды
+    poll();
   };
 
   poll();

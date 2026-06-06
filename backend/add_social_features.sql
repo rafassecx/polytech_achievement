@@ -17,6 +17,16 @@ CREATE TABLE IF NOT EXISTS bookmarks (
   UNIQUE(user_id, achievement_id)
 );
 
+-- Telegram reply контексті: DM хабарлама жіберілгенде сақталады
+CREATE TABLE IF NOT EXISTS tg_reply_context (
+  id SERIAL PRIMARY KEY,
+  tg_message_id BIGINT NOT NULL,
+  tg_chat_id BIGINT NOT NULL,
+  app_sender_id INT REFERENCES users(id) ON DELETE CASCADE,
+  app_receiver_id INT REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Топ ауыстыру сұраулары
 CREATE TABLE IF NOT EXISTS group_change_requests (
   id SERIAL PRIMARY KEY,

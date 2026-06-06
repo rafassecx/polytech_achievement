@@ -1,6 +1,7 @@
 const express = require('express');
 const pool = require('../config/db');
 const { authMiddleware } = require('../middleware/auth');
+const { sendTelegramForceReply } = require('../utils/notifications');
 
 const router = express.Router();
 
@@ -110,6 +111,25 @@ router.post('/direct/:userId', async (req, res) => {
        RETURNING *`,
       [me, other, content.trim()]
     );
+
+    // Алушыға Telegram-да ForceReply хабарлама жіберу (асинхронно)
+    pool.query(
+      'SELECT telegram_id, full_name FROM users WHERE id = $1',
+      [other]
+    ).then(async ({ rows }) => {
+      const receiver = rows[0];
+      if (!receiver?.telegram_id) return;
+      const senderInfo = await pool.query('SELECT full_name FROM users WHERE id = $1', [me]);
+      const senderName = senderInfo.rows[0]?.full_name || 'Пайдаланушы';
+      const preview = content.trim().length > 100
+        ? content.trim().slice(0, 100) + '...'
+        : content.trim();
+      const text = `💬 <b>${senderName}</b> сізге хабарлама жіберді:\n\n${preview}\n\n<i>Жауап беру үшін осы хабарламаға reply жасаңыз</i>`;
+      sendTelegramForceReply(receiver.telegram_id, text, {
+        appSenderId: me,
+        appReceiverId: other,
+      }).catch(() => {});
+    }).catch(() => {});
 
     res.status(201).json({ message: result.rows[0] });
   } catch (err) {

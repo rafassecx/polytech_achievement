@@ -78,6 +78,37 @@ const notifyAllCurators = async ({ achievement_id, title, author_name }) => {
   }
 };
 
+// Отправить DM-уведомление с ForceReply и сохранить контекст для ответа
+const sendTelegramForceReply = async (telegramId, text, { appSenderId, appReceiverId }) => {
+  if (!BOT_TOKEN || !telegramId) return;
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: telegramId,
+        text,
+        parse_mode: 'HTML',
+        reply_markup: { force_reply: true, selective: true },
+      }),
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.ok) return;
+
+    // Контекстті сақтаймыз: кімнің хабарламасы, кімге жіберілді
+    const msgId = data.result.message_id;
+    const chatId = data.result.chat.id;
+    await pool.query(
+      `INSERT INTO tg_reply_context (tg_message_id, tg_chat_id, app_sender_id, app_receiver_id)
+       VALUES ($1, $2, $3, $4)`,
+      [msgId, chatId, appSenderId, appReceiverId]
+    );
+  } catch (err) {
+    console.warn('sendTelegramForceReply error:', err.message);
+  }
+};
+
 // Отправить Telegram-сообщение с inline-кнопками
 const sendTelegramWithButtons = async (telegramId, text, buttons) => {
   if (!BOT_TOKEN || !telegramId) return null;
@@ -134,6 +165,7 @@ module.exports = {
   notifyAllCurators,
   sendTelegramMessage,
   sendTelegramWithButtons,
+  sendTelegramForceReply,
   answerCallback,
   editMessageText,
 };
