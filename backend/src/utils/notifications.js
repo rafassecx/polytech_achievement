@@ -78,32 +78,36 @@ const notifyAllCurators = async ({ achievement_id, title, author_name }) => {
   }
 };
 
-// Отправить DM-уведомление с ForceReply и сохранить контекст для ответа
-const sendTelegramForceReply = async (telegramId, text, { appSenderId, appReceiverId }) => {
+// DM хабарлама жіберілгенде — Telegram-ға жай хабарлама + активті серіктесті сақтау
+const sendTelegramForceReply = async (telegramId, text, { appSenderId, appReceiverId, senderName }) => {
   if (!BOT_TOKEN || !telegramId) return;
   try {
     const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: telegramId,
-        text,
-        parse_mode: 'HTML',
-        reply_markup: { force_reply: true, selective: true },
-      }),
+      body: JSON.stringify({ chat_id: telegramId, text, parse_mode: 'HTML' }),
     });
     if (!res.ok) return;
     const data = await res.json();
     if (!data.ok) return;
 
-    // Контекстті сақтаймыз: кімнің хабарламасы, кімге жіберілді
+    // Активті DM серіктесін жаңарту — жай жазса сол адамға кетеді
+    await pool.query(
+      `INSERT INTO tg_active_dm (telegram_id, app_user_id, partner_name, updated_at)
+       VALUES ($1, $2, $3, NOW())
+       ON CONFLICT (telegram_id) DO UPDATE
+         SET app_user_id = $2, partner_name = $3, updated_at = NOW()`,
+      [telegramId, appSenderId, senderName || 'Пайдаланушы']
+    );
+
+    // Ескі reply-контекст та сақтаймыз (ForceReply жолы үшін)
     const msgId = data.result.message_id;
     const chatId = data.result.chat.id;
     await pool.query(
       `INSERT INTO tg_reply_context (tg_message_id, tg_chat_id, app_sender_id, app_receiver_id)
        VALUES ($1, $2, $3, $4)`,
       [msgId, chatId, appSenderId, appReceiverId]
-    );
+    ).catch(() => {});
   } catch (err) {
     console.warn('sendTelegramForceReply error:', err.message);
   }

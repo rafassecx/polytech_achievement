@@ -200,47 +200,85 @@ async function handleTelegramUpdate(update) {
   }
 }
 
-// Telegram message-reply өңдеу (ForceReply жауаптары)
+// Telegram message өңдеу — reply немесе жай хабарлама
 async function handleTelegramMessage(msg) {
-  // Тек reply-хабарламалар ғана бізге қажет
-  if (!msg.reply_to_message || !msg.text) return;
+  if (!msg.text || msg.text.startsWith('/')) return;
 
-  const replyToId = msg.reply_to_message.message_id;
-  const chatId = msg.chat.id;
+  const fromTgId = String(msg.from.id);
 
   try {
-    // Контексті табамыз
-    const ctx = await pool.query(
-      'SELECT app_sender_id, app_receiver_id FROM tg_reply_context WHERE tg_message_id = $1 AND tg_chat_id = $2',
-      [replyToId, chatId]
-    );
-    if (ctx.rows.length === 0) return;
-
-    const { app_sender_id, app_receiver_id } = ctx.rows[0];
-
-    // Кім жазып жатыр — оның app id-ін Telegram id арқылы табамыз
+    // Жазып жатқан пайдаланушыны табамыз
     const userRes = await pool.query(
       'SELECT id FROM users WHERE telegram_id = $1',
-      [String(msg.from.id)]
+      [fromTgId]
     );
     if (userRes.rows.length === 0) return;
-    const replyUserId = userRes.rows[0].id;
+    const senderId = userRes.rows[0].id;
 
-    // Жауапты кімге жіберу керек: контексттегі app_sender_id (хабарлама жіберген адам)
-    const toUserId = String(replyUserId) === String(app_receiver_id) ? app_sender_id : app_receiver_id;
+    let toUserId = null;
 
+    // 1. Егер reply болса — reply контексттен кімге жіберу керегін табамыз
+    if (msg.reply_to_message) {
+      const ctx = await pool.query(
+        'SELECT app_sender_id, app_receiver_id FROM tg_reply_context WHERE tg_message_id = $1 AND tg_chat_id = $2',
+        [msg.reply_to_message.message_id, msg.chat.id]
+      );
+      if (ctx.rows.length > 0) {
+        const { app_sender_id, app_receiver_id } = ctx.rows[0];
+        toUserId = String(senderId) === String(app_receiver_id) ? app_sender_id : app_receiver_id;
+        await pool.query(
+          'DELETE FROM tg_reply_context WHERE tg_message_id = $1 AND tg_chat_id = $2',
+          [msg.reply_to_message.message_id, msg.chat.id]
+        );
+      }
+    }
+
+    // 2. Егер reply контекст табылмаса — активті серіктесін аламыз
+    if (!toUserId) {
+      const active = await pool.query(
+        'SELECT app_user_id, partner_name FROM tg_active_dm WHERE telegram_id = $1',
+        [fromTgId]
+      );
+      if (active.rows.length === 0) {
+        // Белсенді чат жоқ — пайдаланушыға хабарлайық
+        if (process.env.BOT_TOKEN) {
+          await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              chat_id: msg.chat.id,
+              text: 'Белсенді чат жоқ. Алдымен сайттан хабарлама жіберіңіз.',
+              parse_mode: 'HTML',
+            }),
+          });
+        }
+        return;
+      }
+      toUserId = active.rows[0].app_user_id;
+    }
+
+    // Хабарламаны базаға жазамыз
     await pool.query(
       `INSERT INTO messages (sender_id, receiver_id, content) VALUES ($1, $2, $3)`,
-      [replyUserId, toUserId, msg.text.trim()]
+      [senderId, toUserId, msg.text.trim()]
     );
 
-    // Контексті жойып тастаймыз (бір рет қолданылады)
-    await pool.query(
-      'DELETE FROM tg_reply_context WHERE tg_message_id = $1 AND tg_chat_id = $2',
-      [replyToId, chatId]
-    );
+    // Жіберушіге растаймыз
+    if (process.env.BOT_TOKEN) {
+      const partnerRes = await pool.query('SELECT full_name FROM users WHERE id = $1', [toUserId]);
+      const partnerName = partnerRes.rows[0]?.full_name || 'Пайдаланушы';
+      await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: msg.chat.id,
+          text: `✅ <b>${partnerName}</b>-ға жіберілді`,
+          parse_mode: 'HTML',
+        }),
+      });
+    }
   } catch (err) {
-    console.error('tg message reply error:', err.message);
+    console.error('tg message error:', err.message);
   }
 }
 

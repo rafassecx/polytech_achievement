@@ -27,6 +27,14 @@ CREATE TABLE IF NOT EXISTS tg_reply_context (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Активті DM серіктесі: соңғы хабарлама кімнен келгенін сақтайды
+CREATE TABLE IF NOT EXISTS tg_active_dm (
+  telegram_id BIGINT PRIMARY KEY,
+  app_user_id INT REFERENCES users(id) ON DELETE CASCADE,
+  partner_name TEXT,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- Топ ауыстыру сұраулары
 CREATE TABLE IF NOT EXISTS group_change_requests (
   id SERIAL PRIMARY KEY,

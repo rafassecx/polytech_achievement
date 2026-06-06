@@ -124,10 +124,11 @@ router.post('/direct/:userId', async (req, res) => {
       const preview = content.trim().length > 100
         ? content.trim().slice(0, 100) + '...'
         : content.trim();
-      const text = `💬 <b>${senderName}</b> сізге хабарлама жіберді:\n\n${preview}\n\n<i>Жауап беру үшін осы хабарламаға reply жасаңыз</i>`;
+      const text = `💬 <b>${senderName}</b> сізге хабарлама жіберді:\n\n${preview}\n\n<i>Жауап беру үшін ботқа кез келген хабарлама жазыңыз</i>`;
       sendTelegramForceReply(receiver.telegram_id, text, {
         appSenderId: me,
         appReceiverId: other,
+        senderName,
       }).catch(() => {});
     }).catch(() => {});
 
