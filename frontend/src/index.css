@@ -277,3 +277,13 @@ textarea.glass-input { resize: none; }
     box-shadow: none !important;
   }
 }
+
+/* Select option — dark mode үшін */
+select.glass-input option {
+  background-color: #f0f2ff;
+  color: #1e1b4b;
+}
+[data-theme="dark"] select.glass-input option {
+  background-color: #14102e;
+  color: #e0e7ff;
+}

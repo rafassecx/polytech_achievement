@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Heart, Search, FileText, Check, X, Send as TelegramIcon } from 'lucide-react';
+import { ArrowLeft, Heart, Search, FileText, Check, X, Send as TelegramIcon, ZoomIn } from 'lucide-react';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useModal } from '../contexts/ModalContext';
@@ -32,6 +32,7 @@ export default function AchievementDetail() {
   const [newComment, setNewComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [moderating, setModerating] = useState(false);
+  const [lightbox, setLightbox] = useState(null);
 
   const load = async () => {
     try {
@@ -142,6 +143,9 @@ export default function AchievementDetail() {
   const isOwner = user && user.id === achievement.user_id;
   const canModerate = user && ['curator', 'admin'].includes(user.role);
   const canDelete = isOwner || (user?.role === 'admin');
+  const isPending = achievement.status === 'pending';
+  const showInteractions = !isPending || canModerate;
+
   const images = achievement.files?.filter((f) => f.file_type === 'image') || [];
   const videos = achievement.files?.filter((f) => f.file_type === 'video') || [];
   const docs   = achievement.files?.filter((f) => f.file_type === 'document') || [];
@@ -186,19 +190,27 @@ export default function AchievementDetail() {
           </div>
         )}
 
-        {/* Суреттер */}
+        {/* Суреттер — кастомды ашқыш */}
         {images.length > 0 && (
           <div className="px-7 py-5 border-t border-white/10">
             <h3 className="text-sm font-semibold text-muted mb-3 uppercase tracking-wider">Фотолар</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {images.map((f) => (
-                <a key={f.id} href={f.file_url} target="_blank" rel="noopener noreferrer">
+                <button
+                  key={f.id}
+                  onClick={() => setLightbox(f.file_url)}
+                  className="block relative group/img focus:outline-none"
+                >
                   <img
                     src={f.file_url}
                     alt=""
                     className="w-full h-44 object-cover rounded-2xl hover-lift"
                   />
-                </a>
+                  <div className="absolute inset-0 rounded-2xl flex items-center justify-center opacity-0 group-hover/img:opacity-100 smooth"
+                    style={{ background: 'rgba(0,0,0,0.3)' }}>
+                    <ZoomIn size={24} className="text-white" />
+                  </div>
+                </button>
               ))}
             </div>
           </div>
@@ -240,29 +252,40 @@ export default function AchievementDetail() {
           </div>
         )}
 
-        {/* Лайк + удалить */}
-        <div className="px-7 py-5 border-t border-white/10 flex items-center justify-between">
-          <button
-            onClick={toggleLike}
-            className={`btn-glass flex items-center gap-2 px-4 py-2 spring ${likeInfo.liked ? 'scale-95' : ''}`}
-            style={likeInfo.liked ? { color: '#ef4444', borderColor: 'rgba(239,68,68,0.4)' } : {}}
-          >
-            <Heart size={17} fill={likeInfo.liked ? '#ef4444' : 'none'} />
-            <span className="font-semibold text-sm">{likeInfo.count}</span>
-          </button>
-          {canDelete && (
+        {/* Лайк + жою — тек бекітілген постта */}
+        {showInteractions && (
+          <div className="px-7 py-5 border-t border-white/10 flex items-center justify-between">
             <button
-              onClick={deleteAchievement}
-              className="text-xs px-3 py-1.5 rounded-xl smooth"
-              style={{ color: 'var(--clr-danger)' }}
+              onClick={toggleLike}
+              className={`btn-glass flex items-center gap-2 px-4 py-2 spring ${likeInfo.liked ? 'scale-95' : ''}`}
+              style={likeInfo.liked ? { color: '#ef4444', borderColor: 'rgba(239,68,68,0.4)' } : {}}
             >
-              Жою
+              <Heart size={17} fill={likeInfo.liked ? '#ef4444' : 'none'} />
+              <span className="font-semibold text-sm">{likeInfo.count}</span>
             </button>
-          )}
-        </div>
+            {canDelete && (
+              <button
+                onClick={deleteAchievement}
+                className="text-xs px-3 py-1.5 rounded-xl smooth"
+                style={{ color: 'var(--clr-danger)' }}
+              >
+                Жою
+              </button>
+            )}
+          </div>
+        )}
 
-        {/* Модерация панелі */}
-        {achievement.status === 'pending' && canModerate && (
+        {/* Пост иесіне модерация хабарламасы */}
+        {isPending && isOwner && !canModerate && (
+          <div className="px-7 py-4 border-t border-white/10">
+            <div className="alert-warn" style={{ borderRadius: 14 }}>
+              Модерациядан жауапты күтіңіз
+            </div>
+          </div>
+        )}
+
+        {/* Модерация панелі — кураторларға */}
+        {isPending && canModerate && (
           <div className="px-7 py-5 border-t border-white/10" style={{ background: 'var(--warn-bg)' }}>
             <h3 className="text-sm font-semibold mb-2" style={{ color: 'var(--warn-text)' }}>
               Растау керек
@@ -298,77 +321,101 @@ export default function AchievementDetail() {
           </div>
         )}
 
-        {/* Пікірлер */}
-        <div className="px-7 py-6 border-t border-white/10">
-          <h3 className="text-base font-semibold text-theme mb-4">
-            Пікірлер ({comments.length})
-          </h3>
+        {/* Пікірлер — тек бекітілген постта */}
+        {showInteractions && (
+          <div className="px-7 py-6 border-t border-white/10">
+            <h3 className="text-base font-semibold text-theme mb-4">
+              Пікірлер ({comments.length})
+            </h3>
 
-          {user ? (
-            <form onSubmit={submitComment} className="mb-6 space-y-2">
-              <textarea
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                rows={3}
-                placeholder="Пікіріңізді жазыңыз..."
-                className="glass-input"
-              />
-              <button
-                type="submit"
-                disabled={submitting || !newComment.trim()}
-                className="btn-primary px-5 py-2 rounded-xl text-sm"
-              >
-                {submitting ? 'Жіберілуде...' : 'Жариялау'}
-              </button>
-            </form>
-          ) : (
-            <div className="glass-panel px-5 py-4 text-sm text-muted text-center mb-5">
-              Пікір қалдыру үшін{' '}
-              <Link to="/login" className="text-accent font-medium hover:underline">кіріңіз</Link>
-            </div>
-          )}
+            {user ? (
+              <form onSubmit={submitComment} className="mb-6 space-y-2">
+                <textarea
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  rows={3}
+                  placeholder="Пікіріңізді жазыңыз..."
+                  className="glass-input"
+                />
+                <button
+                  type="submit"
+                  disabled={submitting || !newComment.trim()}
+                  className="btn-primary px-5 py-2 rounded-xl text-sm"
+                >
+                  {submitting ? 'Жіберілуде...' : 'Жариялау'}
+                </button>
+              </form>
+            ) : (
+              <div className="glass-panel px-5 py-4 text-sm text-muted text-center mb-5">
+                Пікір қалдыру үшін{' '}
+                <Link to="/login" className="text-accent font-medium hover:underline">кіріңіз</Link>
+              </div>
+            )}
 
-          {comments.length === 0 ? (
-            <p className="text-center text-muted text-sm py-6">Әзірше пікір жоқ</p>
-          ) : (
-            <div className="space-y-4">
-              {comments.map((c) => (
-                <div key={c.id} className="flex gap-3">
-                  <div
-                    className="w-9 h-9 rounded-2xl flex items-center justify-center text-white text-sm font-bold shrink-0"
-                    style={{ background: 'linear-gradient(135deg, #6366f1, #a78bfa)' }}
-                  >
-                    {c.author_name?.charAt(0) || '?'}
-                  </div>
-                  <div className="flex-1 min-w-0 glass-panel p-3" style={{ borderRadius: 14 }}>
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <span className="text-sm font-semibold text-theme">{c.author_name}</span>
-                      {c.author_role !== 'student' && (
-                        <span className="badge text-[10px]">
-                          {c.author_role === 'curator' ? 'Куратор' : 'Admin'}
-                        </span>
-                      )}
-                      <span className="text-xs text-muted ml-auto">
-                        {new Date(c.created_at).toLocaleString('kk-KZ')}
-                      </span>
-                      {user && (user.id === c.user_id || user.role === 'admin') && (
-                        <button
-                          onClick={() => deleteComment(c.id)}
-                          className="smooth hover:opacity-70"
-                          style={{ color: 'var(--clr-danger)' }}
-                        >
-                          <X size={13} />
-                        </button>
-                      )}
+            {comments.length === 0 ? (
+              <p className="text-center text-muted text-sm py-6">Әзірше пікір жоқ</p>
+            ) : (
+              <div className="space-y-4">
+                {comments.map((c) => (
+                  <div key={c.id} className="flex gap-3">
+                    <div
+                      className="w-9 h-9 rounded-2xl flex items-center justify-center text-white text-sm font-bold shrink-0"
+                      style={{ background: 'linear-gradient(135deg, #6366f1, #a78bfa)' }}
+                    >
+                      {c.author_name?.charAt(0) || '?'}
                     </div>
-                    <p className="text-sm text-theme whitespace-pre-wrap">{c.content}</p>
+                    <div className="flex-1 min-w-0 glass-panel p-3" style={{ borderRadius: 14 }}>
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                        <span className="text-sm font-semibold text-theme">{c.author_name}</span>
+                        {c.author_role !== 'student' && (
+                          <span className="badge text-[10px]">
+                            {c.author_role === 'curator' ? 'Куратор' : 'Admin'}
+                          </span>
+                        )}
+                        <span className="text-xs text-muted ml-auto">
+                          {new Date(c.created_at).toLocaleString('kk-KZ')}
+                        </span>
+                        {user && (user.id === c.user_id || user.role === 'admin') && (
+                          <button
+                            onClick={() => deleteComment(c.id)}
+                            className="smooth hover:opacity-70"
+                            style={{ color: 'var(--clr-danger)' }}
+                          >
+                            <X size={13} />
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-sm text-theme whitespace-pre-wrap">{c.content}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </article>
+
+      {/* Лайтбокс — суретті толық экранда ашу */}
+      {lightbox && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.88)' }}
+          onClick={() => setLightbox(null)}
+        >
+          <button
+            className="absolute top-4 right-4 btn-glass w-10 h-10 flex items-center justify-center z-10"
+            onClick={() => setLightbox(null)}
+          >
+            <X size={20} />
+          </button>
+          <img
+            src={lightbox}
+            className="rounded-2xl object-contain"
+            style={{ maxHeight: '90vh', maxWidth: '90vw' }}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 }

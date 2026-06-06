@@ -253,15 +253,15 @@ export default function Home() {
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
           {achievements.map((a) => (
             <Link to={`/achievements/${a.id}`} key={a.id} className="block group">
-              <article className="glass-card overflow-hidden h-full hover-lift">
+              <article className="glass-card overflow-hidden h-full hover-lift flex flex-col">
                 {a.preview_image ? (
-                  <img src={a.preview_image} alt={a.title} className="w-full h-44 object-cover" />
+                  <img src={a.preview_image} alt={a.title} className="w-full h-44 object-cover shrink-0" />
                 ) : (
-                  <div className="w-full h-44">
+                  <div className="w-full h-44 shrink-0">
                     <CategoryCardIcon category={a.category} />
                   </div>
                 )}
-                <div className="p-5">
+                <div className="p-5 flex flex-col flex-1">
                   <div className="badge mb-3 flex items-center gap-1.5 w-fit">
                     <CategoryBadgeIcon category={a.category} size={12} />
                     {CATEGORY_LABELS[a.category] || a.category}
@@ -270,9 +270,9 @@ export default function Home() {
                     {a.title}
                   </h3>
                   {a.description && (
-                    <p className="text-muted text-sm line-clamp-2 mb-4">{a.description}</p>
+                    <p className="text-muted text-sm line-clamp-2 mb-2">{a.description}</p>
                   )}
-                  <div className="flex items-center justify-between text-xs text-muted pt-3 border-t border-white/20">
+                  <div className="mt-auto flex items-center justify-between text-xs text-muted pt-3 border-t border-white/20">
                     <span className="truncate max-w-32">{a.author_name}</span>
                     <div className="flex items-center gap-3 shrink-0">
                       <span className="flex items-center gap-1">

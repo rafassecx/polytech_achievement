@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { SquarePen, Users, MessageSquare, SendHorizontal, X, ArrowLeft } from 'lucide-react';
+import { SquarePen, Users, MessageSquare, SendHorizontal, X, ArrowLeft, Check, CheckCheck } from 'lucide-react';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -90,6 +90,7 @@ export default function Chat() {
   const [showSearch, setShowSearch] = useState(false);
   // мобильде sidebar/chat ауысу
   const [mobileSidebar, setMobileSidebar] = useState(true);
+  const [membersReads, setMembersReads] = useState([]);
 
   const bottomRef = useRef(null);
   const pollRef = useRef(null);
@@ -116,6 +117,7 @@ export default function Chat() {
         ({ data } = await api.get(`/messages/direct/${chat.id}`));
       } else {
         ({ data } = await api.get(`/messages/group/${encodeURIComponent(chat.groupName)}`));
+        setMembersReads(data.members_reads || []);
       }
       setMessages(data.messages || []);
     } catch { /* тыныш */ }
@@ -231,7 +233,33 @@ export default function Chat() {
               >
                 {m.content}
               </div>
-              <span className="text-[10px] text-muted mt-0.5 px-1">{formatTime(m.created_at)}</span>
+              {/* Оқылды белгілері */}
+              {isMine && activeChat?.type === 'direct' && (
+                <div className="flex items-center gap-0.5 mt-0.5 px-1">
+                  <span className="text-[10px] text-muted">{formatTime(m.created_at)}</span>
+                  {m.is_read
+                    ? <CheckCheck size={12} style={{ color: 'var(--clr-accent)' }} />
+                    : <Check size={12} className="text-muted" />
+                  }
+                </div>
+              )}
+              {isMine && activeChat?.type === 'group' && (() => {
+                const readCount = membersReads.filter(r => r.user_id !== user.id && r.last_message_id >= m.id).length;
+                return (
+                  <div className="flex items-center gap-0.5 mt-0.5 px-1">
+                    <span className="text-[10px] text-muted">{formatTime(m.created_at)}</span>
+                    {readCount > 0 && (
+                      <>
+                        <CheckCheck size={12} style={{ color: 'var(--clr-accent)' }} />
+                        <span className="text-[10px]" style={{ color: 'var(--clr-accent)' }}>{readCount}</span>
+                      </>
+                    )}
+                  </div>
+                );
+              })()}
+              {!isMine && (
+                <span className="text-[10px] text-muted mt-0.5 px-1">{formatTime(m.created_at)}</span>
+              )}
             </div>
           </div>
         </div>

@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell } from 'lucide-react';
+import { Bell, MessageCircle, Heart, CheckCircle2, XCircle, ClipboardList } from 'lucide-react';
 import api from '../lib/api';
 
-const typeEmoji = {
-  comment: '💬',
-  like: '❤️',
-  achievement_approved: '✅',
-  achievement_rejected: '❌',
-  new_pending: '📋',
+const TYPE_ICON = {
+  comment: { Icon: MessageCircle, color: 'var(--clr-accent)' },
+  like: { Icon: Heart, color: '#ef4444' },
+  achievement_approved: { Icon: CheckCircle2, color: 'var(--clr-success)' },
+  achievement_rejected: { Icon: XCircle, color: 'var(--clr-danger)' },
+  new_pending: { Icon: ClipboardList, color: '#f59e0b' },
 };
 
 function timeAgo(dateStr) {
@@ -29,7 +29,6 @@ export default function NotificationsBell() {
   const ref = useRef(null);
   const navigate = useNavigate();
 
-  // Закрываем при клике вне
   useEffect(() => {
     const handler = (e) => {
       if (ref.current && !ref.current.contains(e.target)) setOpen(false);
@@ -55,7 +54,17 @@ export default function NotificationsBell() {
     setLoading(true);
     try {
       const { data } = await api.get('/notifications?limit=20');
-      setItems(data.notifications);
+      const notifs = data.notifications;
+      setItems(notifs);
+
+      // Ашқанда бірден барлығын оқылды деп белгілейміз
+      if (notifs.some(n => !n.is_read)) {
+        api.patch('/notifications/read-all').catch(() => {});
+        setCount(0);
+        setTimeout(() => {
+          setItems(prev => prev.map(n => ({ ...n, is_read: true })));
+        }, 400);
+      }
     } catch { /* тыныш */ }
     setLoading(false);
   };
@@ -66,23 +75,8 @@ export default function NotificationsBell() {
   };
 
   const handleClick = async (n) => {
-    if (!n.is_read) {
-      try {
-        await api.patch(`/notifications/${n.id}/read`);
-        setItems(items.map(i => i.id === n.id ? { ...i, is_read: true } : i));
-        setCount(Math.max(0, count - 1));
-      } catch { /* тыныш */ }
-    }
     if (n.related_id) navigate(`/achievements/${n.related_id}`);
     setOpen(false);
-  };
-
-  const markAllRead = async () => {
-    try {
-      await api.patch('/notifications/read-all');
-      setItems(items.map(i => ({ ...i, is_read: true })));
-      setCount(0);
-    } catch { /* тыныш */ }
   };
 
   return (
@@ -104,14 +98,20 @@ export default function NotificationsBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-80 glass-panel z-50 overflow-hidden flex flex-col max-h-115">
+        <div
+          className="absolute right-0 top-full mt-2 w-80 z-50 overflow-hidden flex flex-col"
+          style={{
+            maxHeight: 460,
+            borderRadius: 16,
+            background: 'var(--nav-bg)',
+            backdropFilter: 'blur(24px) saturate(200%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(200%)',
+            border: '1px solid var(--glass-border)',
+            boxShadow: '0 12px 48px rgba(0,0,0,0.22)',
+          }}
+        >
           <div className="px-4 py-3 flex items-center justify-between border-b border-white/10">
             <span className="text-sm font-semibold text-theme">Хабарландырулар</span>
-            {count > 0 && (
-              <button onClick={markAllRead} className="text-xs text-accent hover:underline">
-                Барлығын оқу
-              </button>
-            )}
           </div>
 
           <div className="overflow-y-auto flex-1">
@@ -120,27 +120,36 @@ export default function NotificationsBell() {
             ) : items.length === 0 ? (
               <div className="text-center text-muted py-8 text-sm">Хабарландырулар жоқ</div>
             ) : (
-              items.map((n) => (
-                <button
-                  key={n.id}
-                  onClick={() => handleClick(n)}
-                  className={`w-full text-left px-4 py-3 flex gap-3 smooth border-b border-white/5 last:border-0 ${
-                    !n.is_read ? 'bg-white/5' : ''
-                  } hover:bg-white/10`}
-                >
-                  <span className="text-xl shrink-0">{typeEmoji[n.type] || '📌'}</span>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-theme leading-tight">{n.title}</div>
-                    {n.message && (
-                      <div className="text-xs text-muted mt-0.5 line-clamp-2">{n.message}</div>
+              items.map((n) => {
+                const meta = TYPE_ICON[n.type] || { Icon: Bell, color: 'var(--clr-accent)' };
+                const IconComp = meta.Icon;
+                return (
+                  <button
+                    key={n.id}
+                    onClick={() => handleClick(n)}
+                    className={`w-full text-left px-4 py-3 flex gap-3 smooth border-b border-white/5 last:border-0 ${
+                      !n.is_read ? 'bg-white/5' : ''
+                    } hover:bg-white/10`}
+                  >
+                    <div
+                      className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+                      style={{ background: `${meta.color}20` }}
+                    >
+                      <IconComp size={15} style={{ color: meta.color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-medium text-theme leading-tight">{n.title}</div>
+                      {n.message && (
+                        <div className="text-xs text-muted mt-0.5 line-clamp-2">{n.message}</div>
+                      )}
+                      <div className="text-xs text-muted mt-1">{timeAgo(n.created_at)}</div>
+                    </div>
+                    {!n.is_read && (
+                      <div className="w-2 h-2 rounded-full shrink-0 mt-2" style={{ background: 'var(--clr-accent)' }} />
                     )}
-                    <div className="text-xs text-muted mt-1">{timeAgo(n.created_at)}</div>
-                  </div>
-                  {!n.is_read && (
-                    <div className="w-2 h-2 rounded-full shrink-0 mt-1.5" style={{ background: 'var(--clr-accent)' }} />
-                  )}
-                </button>
-              ))
+                  </button>
+                );
+              })
             )}
           </div>
         </div>

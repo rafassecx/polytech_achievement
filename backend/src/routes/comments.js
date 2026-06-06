@@ -45,7 +45,7 @@ router.post('/', authMiddleware, async (req, res) => {
         user_id: ach.user_id,
         type: 'comment',
         title: 'Жаңа пікір',
-        message: `${comment.author_name}: ${comment.content.slice(0, 100)}`,
+        message: `«${ach.title}» постына ${comment.author_name} пікір жазды:\n${comment.content.slice(0, 80)}`,
         related_id: achievement_id,
       }).catch(() => {});
     }

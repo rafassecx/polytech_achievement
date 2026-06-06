@@ -153,7 +153,26 @@ router.get('/group/:groupName', async (req, res) => {
       LIMIT 300
     `, [groupName]);
 
-    res.json({ messages: result.rows, group_name: groupName });
+    // Соңғы оқылған хабарламаны жазамыз
+    let membersReads = [];
+    if (result.rows.length > 0) {
+      const latestId = result.rows[result.rows.length - 1].id;
+      await pool.query(`
+        INSERT INTO group_last_reads (group_name, user_id, last_message_id)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (group_name, user_id) DO UPDATE
+        SET last_message_id = GREATEST(group_last_reads.last_message_id, $3),
+            updated_at = NOW()
+      `, [groupName, me, latestId]).catch(() => {});
+
+      const readsRes = await pool.query(
+        'SELECT user_id, last_message_id FROM group_last_reads WHERE group_name = $1',
+        [groupName]
+      ).catch(() => ({ rows: [] }));
+      membersReads = readsRes.rows;
+    }
+
+    res.json({ messages: result.rows, group_name: groupName, members_reads: membersReads });
   } catch (err) {
     console.error('group GET қатесі:', err.message);
     res.status(500).json({ message: 'Топтық чат қатесі: ' + err.message });

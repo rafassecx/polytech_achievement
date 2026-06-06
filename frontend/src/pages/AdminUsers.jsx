@@ -112,7 +112,6 @@ export default function AdminUsers() {
                   <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden sm:table-cell">Топ</th>
                   <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Рөл</th>
                   <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden lg:table-cell">Telegram</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden sm:table-cell">Күй</th>
                   <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider"></th>
                 </tr>
               </thead>
@@ -154,14 +153,6 @@ export default function AdminUsers() {
                           ? <span className="flex items-center gap-1"><TelegramIcon size={12} /> @{u.telegram_username || ''}</span>
                           : '—'
                         }
-                      </td>
-                      <td className="px-4 py-3 hidden sm:table-cell">
-                        <span
-                          className="text-xs font-medium"
-                          style={{ color: u.is_active ? 'var(--clr-success)' : 'var(--clr-danger)' }}
-                        >
-                          {u.is_active ? '● Белсенді' : '● Блокталған'}
-                        </span>
                       </td>
                       <td className="px-4 py-3 text-right">
                         {u.id === me.id ? (
