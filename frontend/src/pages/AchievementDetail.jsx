@@ -193,7 +193,9 @@ export default function AchievementDetail() {
             {achievement.title}
           </h1>
           <div className="text-sm text-muted flex flex-wrap gap-x-2">
-            <span className="font-medium text-sub">{achievement.author_name}</span>
+            <Link to={`/users/${achievement.user_id}`} className="font-medium text-sub hover:text-accent smooth">
+              {achievement.author_name}
+            </Link>
             {achievement.author_group && <span>· {achievement.author_group}</span>}
             {achievement.event_date && (
               <span>· {new Date(achievement.event_date).toLocaleDateString('kk-KZ')}</span>
@@ -396,7 +398,7 @@ export default function AchievementDetail() {
                     </div>
                     <div className="flex-1 min-w-0 glass-panel p-3" style={{ borderRadius: 14 }}>
                       <div className="flex items-center gap-2 mb-1 flex-wrap">
-                        <span className="text-sm font-semibold text-theme">{c.author_name}</span>
+                        <Link to={`/users/${c.user_id}`} className="text-sm font-semibold text-theme hover:text-accent smooth">{c.author_name}</Link>
                         {c.author_role !== 'student' && (
                           <span className="badge text-[10px]">
                             {c.author_role === 'curator' ? 'Куратор' : 'Admin'}

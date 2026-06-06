@@ -311,14 +311,24 @@ router.get('/:id', async (req, res) => {
     const { id } = req.params;
     const result = await pool.query(`
       SELECT id, full_name, role, group_name, avatar_url, bio, created_at,
-             (SELECT COUNT(*)::int FROM achievements WHERE user_id = users.id AND status = 'approved') AS achievements_count,
-             (SELECT COUNT(*)::int FROM friendships
-              WHERE (requester_id = users.id OR addressee_id = users.id) AND status = 'accepted') AS friends_count
+             (SELECT COUNT(*)::int FROM achievements WHERE user_id = users.id AND status = 'approved') AS achievements_count
       FROM users WHERE id = $1 AND is_active = TRUE
     `, [id]);
 
     if (result.rows.length === 0) return res.status(404).json({ message: 'Пайдаланушы табылмады' });
-    res.json(result.rows[0]);
+
+    const user = { ...result.rows[0], friends_count: 0 };
+
+    // friendships кестесі жоқ болуы мүмкін — қате болса 0 қайтарамыз
+    try {
+      const fr = await pool.query(
+        `SELECT COUNT(*)::int AS cnt FROM friendships WHERE (requester_id=$1 OR addressee_id=$1) AND status='accepted'`,
+        [id]
+      );
+      user.friends_count = fr.rows[0].cnt;
+    } catch { /* table not created yet */ }
+
+    res.json(user);
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: 'Ошибка сервера' });

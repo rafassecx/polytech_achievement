@@ -5,7 +5,7 @@ import {
   Send, Link2, Unlink, LogOut,
   Sun, Moon, Lock, Eye, EyeOff,
   User, Info, Award, Bookmark, Users,
-  UserCheck, UserX, Clock,
+  UserCheck, UserX, Clock, Share2,
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -67,6 +67,9 @@ export default function Profile() {
   // Входящие заявки в друзья
   const [friendRequests, setFriendRequests] = useState([]);
   const [processingFriend, setProcessingFriend] = useState(null);
+
+  // Поделиться
+  const [copied, setCopied] = useState(false);
 
   const loadProfile = async () => {
     try {
@@ -214,6 +217,13 @@ export default function Profile() {
     setProcessingFriend(null);
   };
 
+  const shareProfile = () => {
+    navigator.clipboard.writeText(`${window.location.origin}/users/${user?.id}`).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2500);
+    });
+  };
+
   if (loading) return <div className="text-center text-muted py-20 text-sm">Жүктелуде...</div>;
   if (!profile) return null;
 
@@ -255,13 +265,13 @@ export default function Profile() {
             <p className="text-xs text-muted mt-2">{profile.email}</p>
           </div>
 
-          <Link
-            to={`/users/${user?.id}`}
-            className="btn-glass px-3 py-1.5 text-xs flex items-center gap-1.5 shrink-0"
-            title="Публичный профиль"
+          <button
+            onClick={shareProfile}
+            className="btn-glass px-3 py-1.5 text-xs flex items-center gap-1.5 shrink-0 smooth"
+            style={copied ? { color: 'var(--clr-success)', borderColor: 'rgba(16,185,129,0.4)' } : {}}
           >
-            <Link2 size={12} /> Профиль
-          </Link>
+            {copied ? <><Check size={12} /> Көшірілді</> : <><Share2 size={12} /> Бөлісу</>}
+          </button>
         </div>
       </div>
 

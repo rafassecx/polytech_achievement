@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { SquarePen, Users, MessageSquare, SendHorizontal, X, ArrowLeft, Check, CheckCheck } from 'lucide-react';
+import { SquarePen, Users, MessageSquare, SendHorizontal, X, Check, CheckCheck } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -358,24 +359,26 @@ export default function Chat() {
             <>
               {/* Тақырып жолағы */}
               <div className="px-4 py-3 md:py-4 border-b border-white/10 flex items-center gap-3">
-                <button
-                  onClick={() => setMobileSidebar(true)}
-                  className="md:hidden btn-glass p-2 flex items-center justify-center shrink-0"
-                >
-                  <ArrowLeft size={16} />
-                </button>
                 {activeChat.type === 'group' ? (
                   <div
-                    className="w-10 h-10 rounded-2xl flex items-center justify-center"
+                    className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
                     style={{ background: 'rgba(99,102,241,0.15)' }}
                   >
                     <Users size={18} className="text-accent" />
                   </div>
                 ) : (
-                  <Avatar name={activeChat.name} src={activeChat.avatar} size={10} />
+                  <Link to={`/users/${activeChat.id}`} className="shrink-0">
+                    <Avatar name={activeChat.name} src={activeChat.avatar} size={10} />
+                  </Link>
                 )}
-                <div>
-                  <div className="text-sm font-semibold text-theme">{activeChat.name}</div>
+                <div className="flex-1 min-w-0">
+                  {activeChat.type === 'direct' ? (
+                    <Link to={`/users/${activeChat.id}`} className="text-sm font-semibold text-theme hover:text-accent smooth block truncate">
+                      {activeChat.name}
+                    </Link>
+                  ) : (
+                    <div className="text-sm font-semibold text-theme truncate">{activeChat.name}</div>
+                  )}
                   <div className="text-xs text-muted">
                     {activeChat.type === 'group' ? 'Топтық чат' : 'Жеке хат'}
                   </div>

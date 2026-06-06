@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 require('dotenv').config();
 
 const pool = require('./config/db');
@@ -77,6 +78,17 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
+  // Auto-run SQL migration for social features tables
+  try {
+    const migPath = path.join(__dirname, '..', 'add_social_features.sql');
+    if (fs.existsSync(migPath)) {
+      const sql = fs.readFileSync(migPath, 'utf8');
+      await pool.query(sql);
+      console.log('Migration: social tables OK');
+    }
+  } catch (e) {
+    console.log('Migration note:', e.message);
+  }
 });
