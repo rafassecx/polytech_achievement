@@ -145,6 +145,95 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
+// Обработчик одного Telegram update (callback_query от inline-кнопок)
+async function handleTelegramUpdate(update) {
+  const cbq = update?.callback_query;
+  if (!cbq) return;
+
+  const { id: callbackId, data, from, message } = cbq;
+  if (!data || !data.startsWith('fa_')) return;
+
+  const [, action, friendshipIdStr] = data.split('_');
+  const friendshipId = parseInt(friendshipIdStr);
+  if (isNaN(friendshipId)) {
+    await answerCallback(callbackId, 'Қате');
+    return;
+  }
+
+  try {
+    const userRes = await pool.query(
+      'SELECT id, full_name FROM users WHERE telegram_id = $1',
+      [String(from.id)]
+    );
+    if (userRes.rows.length === 0) {
+      await answerCallback(callbackId, 'Пайдаланушы табылмады');
+      return;
+    }
+    const me = userRes.rows[0];
+
+    if (action === 'accept') {
+      const upd = await pool.query(`
+        UPDATE friendships SET status = 'accepted'
+        WHERE id = $1 AND addressee_id = $2 AND status = 'pending'
+        RETURNING requester_id
+      `, [friendshipId, me.id]);
+
+      if (upd.rows.length === 0) {
+        await answerCallback(callbackId, 'Бұрын өңделді');
+        return;
+      }
+      await answerCallback(callbackId, '✅ Достық қабылданды!');
+      await editMessageText(from.id, message.message_id,
+        `✅ <b>${me.full_name}</b> достық сұрауын қабылдады`);
+
+    } else if (action === 'reject') {
+      await pool.query(
+        `DELETE FROM friendships WHERE id = $1 AND (addressee_id = $2 OR requester_id = $2)`,
+        [friendshipId, me.id]
+      );
+      await answerCallback(callbackId, 'Бас тартылды');
+      await editMessageText(from.id, message.message_id,
+        `❌ Достық сұрауы бас тартылды`);
+    }
+  } catch (err) {
+    console.error('tg callback error:', err.message);
+  }
+}
+
+// Polling — домен болмаса да жұмыс істейді
+async function startPolling() {
+  const BOT_TOKEN = process.env.BOT_TOKEN;
+  if (!BOT_TOKEN) return;
+
+  // Егер webhook орнатылған болса алдымен жойу керек
+  try {
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/deleteWebhook`);
+  } catch { /* тыныш */ }
+
+  let offset = 0;
+  console.log('Telegram polling started');
+
+  const poll = async () => {
+    try {
+      const res = await fetch(
+        `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${offset}&timeout=25&allowed_updates=["callback_query"]`,
+        { signal: AbortSignal.timeout(30000) }
+      );
+      if (!res.ok) { setTimeout(poll, 5000); return; }
+      const { ok, result } = await res.json();
+      if (ok && result.length > 0) {
+        for (const update of result) {
+          offset = update.update_id + 1;
+          handleTelegramUpdate(update).catch(() => {});
+        }
+      }
+    } catch { /* timeout немесе желі қатесі */ }
+    poll(); // рекурсия — тынымсыз сұрайды
+  };
+
+  poll();
+}
+
 app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
   // Auto-run SQL migration for social features tables
@@ -158,4 +247,7 @@ app.listen(PORT, async () => {
   } catch (e) {
     console.log('Migration note:', e.message);
   }
+
+  // Telegram polling — webhook орнатылмаса автоматты іске қосылады
+  startPolling();
 });
