@@ -202,7 +202,35 @@ async function handleTelegramUpdate(update) {
 
 // Telegram message өңдеу — reply немесе жай хабарлама
 async function handleTelegramMessage(msg) {
-  if (!msg.text || msg.text.startsWith('/')) return;
+  if (!msg.text) return;
+
+  // /stop командасы — активті чатты тоқтату
+  if (msg.text === '/stop' || msg.text === '/стоп' || msg.text === '🔴 Чатты тоқтату (/stop)') {
+    try {
+      const del = await pool.query(
+        'DELETE FROM tg_active_dm WHERE telegram_id = $1 RETURNING partner_name',
+        [fromTgId]
+      );
+      const name = del.rows[0]?.partner_name;
+      await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: msg.chat.id,
+          text: name
+            ? `🔴 <b>${name}</b>-мен чат аяқталды`
+            : '🔴 Белсенді чат жоқ',
+          parse_mode: 'HTML',
+          reply_markup: { remove_keyboard: true },
+        }),
+      });
+    } catch (err) {
+      console.error('tg /stop error:', err.message);
+    }
+    return;
+  }
+
+  if (msg.text.startsWith('/')) return;
 
   const fromTgId = String(msg.from.id);
 

@@ -85,7 +85,16 @@ const sendTelegramForceReply = async (telegramId, text, { appSenderId, appReceiv
     const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: telegramId, text, parse_mode: 'HTML' }),
+      body: JSON.stringify({
+        chat_id: telegramId,
+        text,
+        parse_mode: 'HTML',
+        reply_markup: {
+          keyboard: [[{ text: '🔴 Чатты тоқтату (/stop)' }]],
+          resize_keyboard: true,
+          one_time_keyboard: false,
+        },
+      }),
     });
     if (!res.ok) return;
     const data = await res.json();
