@@ -103,11 +103,9 @@ export default function NotificationsBell() {
           style={{
             maxHeight: 460,
             borderRadius: 16,
-            background: 'var(--nav-bg)',
-            backdropFilter: 'blur(24px) saturate(200%)',
-            WebkitBackdropFilter: 'blur(24px) saturate(200%)',
+            background: 'var(--notif-bg)',
             border: '1px solid var(--glass-border)',
-            boxShadow: '0 12px 48px rgba(0,0,0,0.22)',
+            boxShadow: '0 12px 48px rgba(0,0,0,0.28)',
           }}
         >
           <div className="px-4 py-3 flex items-center justify-between border-b border-white/10">

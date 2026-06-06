@@ -44,6 +44,7 @@
   --input-ring: rgba(99, 102, 241, 0.26);
   --badge-bg: rgba(99, 102, 241, 0.12);
   --badge-text: #4338ca;
+  --notif-bg: #f0f2ff;
 }
 
 /* ═══════════════════════════════════════════
@@ -79,6 +80,7 @@
   --input-ring: rgba(129, 140, 248, 0.22);
   --badge-bg: rgba(129, 140, 248, 0.18);
   --badge-text: #a5b4fc;
+  --notif-bg: #14102e;
 }
 
 /* ═══════════════════════════════════════════
@@ -286,4 +288,20 @@ select.glass-input option {
 [data-theme="dark"] select.glass-input option {
   background-color: #14102e;
   color: #e0e7ff;
+}
+
+/* Лайтбокс анимациялары */
+@keyframes lightbox-backdrop {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes lightbox-image {
+  from { opacity: 0; transform: scale(0.82); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.lightbox-backdrop {
+  animation: lightbox-backdrop 0.22s ease;
+}
+.lightbox-image {
+  animation: lightbox-image 0.32s cubic-bezier(0.34, 1.56, 0.64, 1);
 }

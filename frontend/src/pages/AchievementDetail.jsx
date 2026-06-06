@@ -398,7 +398,7 @@ export default function AchievementDetail() {
       {/* Лайтбокс — суретті толық экранда ашу */}
       {lightbox && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 lightbox-backdrop"
           style={{ background: 'rgba(0,0,0,0.88)' }}
           onClick={() => setLightbox(null)}
         >
@@ -410,7 +410,7 @@ export default function AchievementDetail() {
           </button>
           <img
             src={lightbox}
-            className="rounded-2xl object-contain"
+            className="rounded-2xl object-contain lightbox-image"
             style={{ maxHeight: '90vh', maxWidth: '90vw' }}
             onClick={(e) => e.stopPropagation()}
           />
