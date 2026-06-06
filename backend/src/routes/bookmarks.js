@@ -34,7 +34,7 @@ router.get('/', async (req, res) => {
   try {
     const result = await pool.query(`
       SELECT a.*, u.full_name AS author_name, u.group_name AS author_group,
-             (SELECT file_url FROM achievement_files
+             (SELECT file_url FROM files
               WHERE achievement_id = a.id AND file_type = 'image' LIMIT 1) AS preview_image,
              (SELECT COUNT(*)::int FROM likes WHERE achievement_id = a.id) AS likes_count,
              (SELECT COUNT(*)::int FROM comments WHERE achievement_id = a.id) AS comments_count
