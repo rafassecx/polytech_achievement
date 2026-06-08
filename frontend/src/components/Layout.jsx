@@ -10,7 +10,7 @@ export default function Layout() {
       </main>
       <footer className="glass-nav mt-6">
         <div className="max-w-6xl mx-auto px-6 py-4 text-center text-sm text-muted">
-          © 2026 Жетістіктер жүйесі · АПК Колледжі
+          © 2026 <span className="font-semibold">Achiev<span style={{ color: '#818cf8' }}>ly</span></span> · Алматы Политехникалық Колледжі
         </div>
       </footer>
     </div>

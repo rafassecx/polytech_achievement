@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { Home, Trophy, Plus, MessageSquare, ClipboardList, Users, UserCircle } from 'lucide-react';
+import { Home, Trophy, Plus, MessageSquare, ClipboardList, Users, UserCircle, Check } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import NotificationsBell from './NotificationsBell';
 import api from '../lib/api';
@@ -51,14 +51,20 @@ export default function Navbar() {
           {/* Логотип */}
           <Link to="/" className="flex items-center gap-2.5 shrink-0">
             <div
-              className="w-9 h-9 rounded-2xl flex items-center justify-center font-bold text-white text-sm"
-              style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a78bfa 100%)' }}
+              className="w-9 h-9 rounded-2xl flex items-center justify-center shrink-0"
+              style={{
+                background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+                boxShadow: '0 4px 14px rgba(99,102,241,0.4)',
+              }}
             >
-              АПК
+              <Check size={18} className="text-white" strokeWidth={2.8} />
             </div>
-            <div className="hidden sm:block leading-tight">
-              <div className="text-sm font-semibold text-theme">Жетістіктер жүйесі</div>
-              <div className="text-[10px] text-muted">Алматы Политехникалық Колледжі</div>
+            <div className="leading-tight">
+              <div className="text-base font-bold tracking-tight" style={{ lineHeight: 1.1 }}>
+                <span className="text-theme">Achiev</span>
+                <span style={{ color: '#818cf8' }}>ly</span>
+              </div>
+              <div className="text-[10px] text-muted hidden sm:block">Track · Share · Achieve</div>
             </div>
           </Link>
 
