@@ -200,116 +200,6 @@ async function handleTelegramUpdate(update) {
   }
 }
 
-// Telegram message өңдеу — reply немесе жай хабарлама
-async function handleTelegramMessage(msg) {
-  if (!msg.text) return;
-
-  // /stop командасы — активті чатты тоқтату
-  if (msg.text === '/stop' || msg.text === '/стоп' || msg.text === '🔴 Чатты тоқтату (/stop)') {
-    try {
-      const del = await pool.query(
-        'DELETE FROM tg_active_dm WHERE telegram_id = $1 RETURNING partner_name',
-        [fromTgId]
-      );
-      const name = del.rows[0]?.partner_name;
-      await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: msg.chat.id,
-          text: name
-            ? `🔴 <b>${name}</b>-мен чат аяқталды`
-            : '🔴 Белсенді чат жоқ',
-          parse_mode: 'HTML',
-          reply_markup: { remove_keyboard: true },
-        }),
-      });
-    } catch (err) {
-      console.error('tg /stop error:', err.message);
-    }
-    return;
-  }
-
-  if (msg.text.startsWith('/')) return;
-
-  const fromTgId = String(msg.from.id);
-
-  try {
-    // Жазып жатқан пайдаланушыны табамыз
-    const userRes = await pool.query(
-      'SELECT id FROM users WHERE telegram_id = $1',
-      [fromTgId]
-    );
-    if (userRes.rows.length === 0) return;
-    const senderId = userRes.rows[0].id;
-
-    let toUserId = null;
-
-    // 1. Егер reply болса — reply контексттен кімге жіберу керегін табамыз
-    if (msg.reply_to_message) {
-      const ctx = await pool.query(
-        'SELECT app_sender_id, app_receiver_id FROM tg_reply_context WHERE tg_message_id = $1 AND tg_chat_id = $2',
-        [msg.reply_to_message.message_id, msg.chat.id]
-      );
-      if (ctx.rows.length > 0) {
-        const { app_sender_id, app_receiver_id } = ctx.rows[0];
-        toUserId = String(senderId) === String(app_receiver_id) ? app_sender_id : app_receiver_id;
-        await pool.query(
-          'DELETE FROM tg_reply_context WHERE tg_message_id = $1 AND tg_chat_id = $2',
-          [msg.reply_to_message.message_id, msg.chat.id]
-        );
-      }
-    }
-
-    // 2. Егер reply контекст табылмаса — активті серіктесін аламыз
-    if (!toUserId) {
-      const active = await pool.query(
-        'SELECT app_user_id, partner_name FROM tg_active_dm WHERE telegram_id = $1',
-        [fromTgId]
-      );
-      if (active.rows.length === 0) {
-        // Белсенді чат жоқ — пайдаланушыға хабарлайық
-        if (process.env.BOT_TOKEN) {
-          await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: msg.chat.id,
-              text: 'Белсенді чат жоқ. Алдымен сайттан хабарлама жіберіңіз.',
-              parse_mode: 'HTML',
-            }),
-          });
-        }
-        return;
-      }
-      toUserId = active.rows[0].app_user_id;
-    }
-
-    // Хабарламаны базаға жазамыз
-    await pool.query(
-      `INSERT INTO messages (sender_id, receiver_id, content) VALUES ($1, $2, $3)`,
-      [senderId, toUserId, msg.text.trim()]
-    );
-
-    // Жіберушіге растаймыз
-    if (process.env.BOT_TOKEN) {
-      const partnerRes = await pool.query('SELECT full_name FROM users WHERE id = $1', [toUserId]);
-      const partnerName = partnerRes.rows[0]?.full_name || 'Пайдаланушы';
-      await fetch(`https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          chat_id: msg.chat.id,
-          text: `✅ <b>${partnerName}</b>-ға жіберілді`,
-          parse_mode: 'HTML',
-        }),
-      });
-    }
-  } catch (err) {
-    console.error('tg message error:', err.message);
-  }
-}
-
 // Polling — домен болмаса да жұмыс істейді
 async function startPolling() {
   const BOT_TOKEN = process.env.BOT_TOKEN;
@@ -325,7 +215,7 @@ async function startPolling() {
 
   const poll = async () => {
     try {
-      const allowed = JSON.stringify(['callback_query', 'message']);
+      const allowed = JSON.stringify(['callback_query']);
       const res = await fetch(
         `https://api.telegram.org/bot${BOT_TOKEN}/getUpdates?offset=${offset}&timeout=25&allowed_updates=${encodeURIComponent(allowed)}`,
         { signal: AbortSignal.timeout(30000) }
@@ -337,8 +227,6 @@ async function startPolling() {
           offset = update.update_id + 1;
           if (update.callback_query) {
             handleTelegramUpdate(update).catch(() => {});
-          } else if (update.message) {
-            handleTelegramMessage(update.message).catch(() => {});
           }
         }
       }

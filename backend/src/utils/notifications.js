@@ -78,50 +78,6 @@ const notifyAllCurators = async ({ achievement_id, title, author_name }) => {
   }
 };
 
-// DM хабарлама жіберілгенде — Telegram-ға жай хабарлама + активті серіктесті сақтау
-const sendTelegramForceReply = async (telegramId, text, { appSenderId, appReceiverId, senderName }) => {
-  if (!BOT_TOKEN || !telegramId) return;
-  try {
-    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: telegramId,
-        text,
-        parse_mode: 'HTML',
-        reply_markup: {
-          keyboard: [[{ text: '🔴 Чатты тоқтату (/stop)' }]],
-          resize_keyboard: true,
-          one_time_keyboard: false,
-        },
-      }),
-    });
-    if (!res.ok) return;
-    const data = await res.json();
-    if (!data.ok) return;
-
-    // Активті DM серіктесін жаңарту — жай жазса сол адамға кетеді
-    await pool.query(
-      `INSERT INTO tg_active_dm (telegram_id, app_user_id, partner_name, updated_at)
-       VALUES ($1, $2, $3, NOW())
-       ON CONFLICT (telegram_id) DO UPDATE
-         SET app_user_id = $2, partner_name = $3, updated_at = NOW()`,
-      [telegramId, appSenderId, senderName || 'Пайдаланушы']
-    );
-
-    // Ескі reply-контекст та сақтаймыз (ForceReply жолы үшін)
-    const msgId = data.result.message_id;
-    const chatId = data.result.chat.id;
-    await pool.query(
-      `INSERT INTO tg_reply_context (tg_message_id, tg_chat_id, app_sender_id, app_receiver_id)
-       VALUES ($1, $2, $3, $4)`,
-      [msgId, chatId, appSenderId, appReceiverId]
-    ).catch(() => {});
-  } catch (err) {
-    console.warn('sendTelegramForceReply error:', err.message);
-  }
-};
-
 // Отправить Telegram-сообщение с inline-кнопками
 const sendTelegramWithButtons = async (telegramId, text, buttons) => {
   if (!BOT_TOKEN || !telegramId) return null;
@@ -178,7 +134,6 @@ module.exports = {
   notifyAllCurators,
   sendTelegramMessage,
   sendTelegramWithButtons,
-  sendTelegramForceReply,
   answerCallback,
   editMessageText,
 };
