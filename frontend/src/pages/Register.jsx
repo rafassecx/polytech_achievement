@@ -68,7 +68,7 @@ export default function Register() {
               required
               minLength={3}
               className="glass-input"
-              placeholder="Айбек Сейтімбетов"
+              placeholder="Аты-жөніңіз"
             />
           </div>
 
@@ -91,7 +91,7 @@ export default function Register() {
               value={form.group_name}
               onChange={update('group_name')}
               className="glass-input"
-              placeholder="P22-2B"
+              placeholder="Топ атауы"
             />
           </div>
 
