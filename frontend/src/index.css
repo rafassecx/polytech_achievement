@@ -84,6 +84,29 @@
 }
 
 /* ═══════════════════════════════════════════
+   Кастом скролл
+═══════════════════════════════════════════ */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(129, 140, 248, 0.25);
+  border-radius: 99px;
+  transition: background 0.2s;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(129, 140, 248, 0.5);
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(129, 140, 248, 0.25) transparent;
+}
+
+/* ═══════════════════════════════════════════
    Негізгі стильдер
 ═══════════════════════════════════════════ */
 html { scroll-behavior: smooth; }
