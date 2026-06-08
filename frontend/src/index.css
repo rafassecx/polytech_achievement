@@ -94,16 +94,25 @@
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(129, 140, 248, 0.25);
+  background: rgba(99, 102, 241, 0.35);
   border-radius: 99px;
-  transition: background 0.2s;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(129, 140, 248, 0.5);
+  background: rgba(99, 102, 241, 0.6);
 }
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(129, 140, 248, 0.25) transparent;
+  scrollbar-color: rgba(99, 102, 241, 0.35) transparent;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: rgba(129, 140, 248, 0.3);
+}
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: rgba(129, 140, 248, 0.55);
+}
+[data-theme="dark"] * {
+  scrollbar-color: rgba(129, 140, 248, 0.3) transparent;
 }
 
 /* ═══════════════════════════════════════════
