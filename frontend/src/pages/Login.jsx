@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Check } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Login() {
@@ -31,16 +32,19 @@ export default function Login() {
     <div className="min-h-[calc(100vh-140px)] flex items-center justify-center px-5 py-12">
       <div className="w-full max-w-md">
 
-        {/* Логотип мен тақырып */}
         <div className="text-center mb-8">
           <div
-            className="w-16 h-16 rounded-3xl mx-auto mb-4 flex items-center justify-center text-white font-bold text-xl"
-            style={{ background: 'linear-gradient(135deg, #6366f1 0%, #a78bfa 100%)', boxShadow: '0 8px 24px rgba(99,102,241,0.35)' }}
+            className="w-16 h-16 rounded-3xl mx-auto mb-4 flex items-center justify-center"
+            style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)', boxShadow: '0 8px 24px rgba(99,102,241,0.35)' }}
           >
-            АПК
+            <Check size={28} className="text-white" strokeWidth={2.8} />
           </div>
-          <h1 className="text-2xl font-bold text-theme">Қош келдіңіз</h1>
-          <p className="text-sm text-muted mt-1">Аккаунтыңызға кіріңіз</p>
+          <div className="text-2xl font-bold mb-1">
+            <span className="text-theme">Achiev</span>
+            <span style={{ color: '#818cf8' }}>ly</span>
+          </div>
+          <h1 className="text-base font-medium text-theme">Қош келдіңіз</h1>
+          <p className="text-sm text-muted mt-0.5">Аккаунтыңызға кіріңіз</p>
         </div>
 
         {/* Форма */}
