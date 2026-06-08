@@ -83,7 +83,7 @@ export default function GroupProfile() {
 
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-bold text-theme">{data.group_name}</h1>
-            <p className="text-sm text-muted mt-1">Алматы Политехникалық Колледжі</p>
+            <p className="text-sm text-muted mt-1">Achievly · Оқу тобы</p>
             <div className="flex items-center gap-5 mt-3 flex-wrap">
               <div className="flex items-center gap-1.5 text-sm">
                 <Users size={14} className="text-accent" />

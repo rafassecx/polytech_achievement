@@ -695,9 +695,9 @@ export default function Profile() {
               <Info size={16} /> Жүйе туралы
             </h3>
             <dl className="space-y-2 text-sm">
-              <div className="flex justify-between"><dt className="text-muted">Жоба</dt><dd className="text-theme">АПК Жетістіктер жүйесі</dd></div>
+              <div className="flex justify-between"><dt className="text-muted">Жоба</dt><dd className="text-theme">Achievly</dd></div>
               <div className="flex justify-between"><dt className="text-muted">Нұсқасы</dt><dd className="text-theme">1.0.0</dd></div>
-              <div className="flex justify-between"><dt className="text-muted">© 2026</dt><dd className="text-theme">Алматы Политехникалық Колледжі</dd></div>
+              <div className="flex justify-between"><dt className="text-muted">© 2026</dt><dd className="text-theme">Achievly</dd></div>
             </dl>
           </div>
 
