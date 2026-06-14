@@ -137,12 +137,15 @@ app.get('/api/health', async (req, res) => {
 // Production: фронтенд статикасын раздаём
 if (process.env.NODE_ENV === 'production') {
   const frontendDist = path.join(__dirname, '..', '..', 'frontend', 'dist');
-  app.use(express.static(frontendDist));
-  // SPA роутинг — барлық API емес сұраныстарды index.html-ге жіберу
-  app.get('*', (req, res) => {
-    if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return;
-    res.sendFile(path.join(frontendDist, 'index.html'));
-  });
+  
+  // Папканың бар-жоғын тексеріп барып қана іске қосу (сервер құлап қалмас үшін)
+  if (fs.existsSync(frontendDist)) {
+    app.use(express.static(frontendDist));
+    app.get('*', (req, res) => {
+      if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return;
+      res.sendFile(path.join(frontendDist, 'index.html'));
+    });
+  }
 }
 
 // Обработчик одного Telegram update (callback_query от inline-кнопок)
@@ -237,8 +240,9 @@ async function startPolling() {
   poll();
 }
 
-app.listen(PORT, async () => {
-  console.log(`Server running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', async () => {
+  console.log(`Server running globally on port ${PORT}`);
+  
   // Auto-run SQL migration for social features tables
   try {
     const migPath = path.join(__dirname, '..', 'add_social_features.sql');
