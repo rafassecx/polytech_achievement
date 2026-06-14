@@ -1,9 +1,3 @@
--- ============================================================
---  APC Колледж — Жетістіктер жүйесінің дерекқор схемасы
---  PostgreSQL 14+
--- ============================================================
-
--- Тазалау (қайта іске қосу үшін)
 DROP TABLE IF EXISTS messages      CASCADE;
 DROP TABLE IF EXISTS notifications CASCADE;
 DROP TABLE IF EXISTS comments      CASCADE;
@@ -13,9 +7,6 @@ DROP TABLE IF EXISTS achievements  CASCADE;
 DROP TABLE IF EXISTS groups        CASCADE;
 DROP TABLE IF EXISTS users         CASCADE;
 
--- ============================================================
--- 1. ПАЙДАЛАНУШЫЛАР (users)
--- ============================================================
 CREATE TABLE users (
   id               SERIAL PRIMARY KEY,
   email            VARCHAR(255) NOT NULL UNIQUE,
@@ -33,9 +24,6 @@ CREATE TABLE users (
   updated_at       TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================================
--- 2. АКАДЕМИЯЛЫҚ ТОПТАР (groups)
--- ============================================================
 CREATE TABLE groups (
   id          SERIAL PRIMARY KEY,
   name        VARCHAR(100) NOT NULL UNIQUE,   -- 'P22-2B', 'IS-23-1' т.б.
@@ -44,9 +32,6 @@ CREATE TABLE groups (
   created_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================================
--- 3. ЖЕТІСТІКТЕР (achievements)
--- ============================================================
 CREATE TABLE achievements (
   id                SERIAL PRIMARY KEY,
   user_id           INT          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -64,9 +49,6 @@ CREATE TABLE achievements (
   updated_at        TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================================
--- 4. ЖЕТІСТІК ФАЙЛДАРЫ (files)
--- ============================================================
 CREATE TABLE files (
   id             SERIAL PRIMARY KEY,
   achievement_id INT          NOT NULL REFERENCES achievements(id) ON DELETE CASCADE,
@@ -79,9 +61,6 @@ CREATE TABLE files (
   uploaded_at    TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================================
--- 5. ЛАЙКТАР (likes)
--- ============================================================
 CREATE TABLE likes (
   id             SERIAL PRIMARY KEY,
   achievement_id INT NOT NULL REFERENCES achievements(id) ON DELETE CASCADE,
@@ -90,9 +69,6 @@ CREATE TABLE likes (
   UNIQUE(achievement_id, user_id)
 );
 
--- ============================================================
--- 6. ПІКІРЛЕР (comments)
--- ============================================================
 CREATE TABLE comments (
   id             SERIAL PRIMARY KEY,
   achievement_id INT  NOT NULL REFERENCES achievements(id) ON DELETE CASCADE,
@@ -101,9 +77,6 @@ CREATE TABLE comments (
   created_at     TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================================
--- 7. ХАБАРЛАНДЫРУЛАР (notifications)
--- ============================================================
 CREATE TABLE notifications (
   id         SERIAL PRIMARY KEY,
   user_id    INT          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -115,11 +88,6 @@ CREATE TABLE notifications (
   created_at TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================================
--- 8. ЧАТ ХАБАРЛАМАЛАРЫ (messages)
---    receiver_id толтырылса — жеке хат
---    group_name толтырылса — топтық чат
--- ============================================================
 CREATE TABLE messages (
   id          SERIAL PRIMARY KEY,
   sender_id   INT  NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -129,16 +97,12 @@ CREATE TABLE messages (
   is_read     BOOLEAN     NOT NULL DEFAULT FALSE,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
-  -- Бір нысанаға ғана жіберілуі тиіс
   CONSTRAINT msg_one_target CHECK (
     (receiver_id IS NOT NULL AND group_name IS NULL) OR
     (receiver_id IS NULL     AND group_name IS NOT NULL)
   )
 );
 
--- ============================================================
--- ИНДЕКСТЕР (жылдамдату үшін)
--- ============================================================
 CREATE INDEX idx_achievements_user      ON achievements(user_id);
 CREATE INDEX idx_achievements_status    ON achievements(status);
 CREATE INDEX idx_achievements_category  ON achievements(category);
@@ -152,10 +116,9 @@ CREATE INDEX idx_messages_group         ON messages(group_name);
 CREATE INDEX idx_users_group            ON users(group_name);
 CREATE INDEX idx_users_telegram         ON users(telegram_id);
 
--- ============================================================
--- ДЕМО ДЕРЕКТЕР: Әкімші аккаунты
--- Пароль: admin123  (bcrypt хэші)
--- ============================================================
+-- ДЕМО: Админ аккаунт
+-- Пароль: admin123  (bcrypt хэш)
+
 INSERT INTO users (email, password_hash, full_name, role)
 VALUES (
   'admin@apc.kz',
