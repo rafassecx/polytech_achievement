@@ -7,9 +7,5 @@
   },
   "engines": {
     "node": ">=20"
-  },
-  "scripts": {
-  "build": "echo 'No build needed'",
-  "start": "node index.js"
   }
 }
