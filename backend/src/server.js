@@ -130,23 +130,11 @@ app.get('/api/health', async (req, res) => {
 
 if (process.env.NODE_ENV === 'production') {
   const frontendDist = path.join(__dirname, '..', '..', 'frontend', 'dist');
-<<<<<<< HEAD
   app.use(express.static(frontendDist));
   app.get('*', (req, res) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return;
     res.sendFile(path.join(frontendDist, 'index.html'));
   });
-=======
-  
-  // Папканың бар-жоғын тексеріп барып қана іске қосу (сервер құлап қалмас үшін)
-  if (fs.existsSync(frontendDist)) {
-    app.use(express.static(frontendDist));
-    app.get('*', (req, res) => {
-      if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return;
-      res.sendFile(path.join(frontendDist, 'index.html'));
-    });
-  }
->>>>>>> fed6ade3d847357a7588f6702f317e5a52f97281
 }
 
 async function handleTelegramUpdate(update) {
@@ -238,9 +226,8 @@ async function startPolling() {
   poll();
 }
 
-app.listen(PORT, '0.0.0.0', async () => {
-  console.log(`Server running globally on port ${PORT}`);
-  
+app.listen(PORT, async () => {
+  console.log(`Server running on port ${PORT}`);
   // Auto-run SQL migration for social features tables
   try {
     const migPath = path.join(__dirname, '..', 'add_social_features.sql');
