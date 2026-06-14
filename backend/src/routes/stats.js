@@ -3,7 +3,6 @@ const pool = require('../config/db');
 
 const router = express.Router();
 
-// ===== ЖАЛПЫ СТАТИСТИКА =====
 // GET /api/stats/summary
 router.get('/summary', async (req, res) => {
   try {
@@ -34,7 +33,6 @@ router.get('/summary', async (req, res) => {
   }
 });
 
-// ===== РЕЙТИНГ-КЕСТЕ =====
 // GET /api/stats/leaderboard?limit=10&group=P22-2B
 router.get('/leaderboard', async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit) || 10, 50);

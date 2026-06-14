@@ -8,19 +8,16 @@ const { authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Создаём папки, если их нет
 ['uploads/images', 'uploads/videos', 'uploads/documents'].forEach(dir => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 });
 
-// Определяем тип файла по mime
 const getFileType = (mimetype) => {
   if (mimetype.startsWith('image/')) return 'image';
   if (mimetype.startsWith('video/')) return 'video';
   return 'document';
 };
 
-// Настройка multer: куда и под каким именем сохранять
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const type = getFileType(file.mimetype);
@@ -36,7 +33,6 @@ const storage = multer.diskStorage({
   }
 });
 
-// Разрешённые типы файлов
 const fileFilter = (req, file, cb) => {
   const allowed = [
     'image/jpeg', 'image/png', 'image/gif', 'image/webp',
@@ -55,13 +51,11 @@ const upload = multer({
   limits: { fileSize: 50 * 1024 * 1024 } // 50 MB
 });
 
-// ===== ЗАГРУЗКА ФАЙЛОВ К ДОСТИЖЕНИЮ =====
 // POST /api/upload/:achievement_id
 router.post('/:achievement_id', authMiddleware, upload.array('files', 10), async (req, res) => {
   try {
     const { achievement_id } = req.params;
 
-    // Проверяем, существует ли достижение
     const check = await pool.query(
       'SELECT user_id FROM achievements WHERE id = $1',
       [achievement_id]
@@ -71,7 +65,6 @@ router.post('/:achievement_id', authMiddleware, upload.array('files', 10), async
       return res.status(404).json({ message: 'Достижение не найдено' });
     }
 
-    // Только владелец, куратор или админ
     if (check.rows[0].user_id !== req.user.id &&
         !['curator', 'admin'].includes(req.user.role)) {
       return res.status(403).json({ message: 'Нет прав на загрузку' });
@@ -81,7 +74,6 @@ router.post('/:achievement_id', authMiddleware, upload.array('files', 10), async
       return res.status(400).json({ message: 'Файлы не загружены' });
     }
 
-    // Записываем в БД
     const savedFiles = [];
     for (const file of req.files) {
       const fileType = getFileType(file.mimetype);
@@ -106,7 +98,6 @@ router.post('/:achievement_id', authMiddleware, upload.array('files', 10), async
   }
 });
 
-// ===== УДАЛЕНИЕ ФАЙЛА =====
 // DELETE /api/upload/file/:id
 router.delete('/file/:id', authMiddleware, async (req, res) => {
   try {
@@ -129,7 +120,6 @@ router.delete('/file/:id', authMiddleware, async (req, res) => {
       return res.status(403).json({ message: 'Нет прав на удаление' });
     }
 
-    // Удаляем физический файл
     const filePath = file.file_url.replace(/^\//, '');
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 

@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { SquarePen, Users, MessageSquare, SendHorizontal, X, Check, CheckCheck } from 'lucide-react';
+import { SquarePen, Users, MessageSquare, SendHorizontal, X, Check, CheckCheck, Trash2 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
+import { useModal } from '../contexts/ModalContext';
 
-// Уақыт форматы
 function formatTime(dateStr) {
   const d = new Date(dateStr);
   return d.toLocaleTimeString('kk-KZ', { hour: '2-digit', minute: '2-digit' });
@@ -21,7 +21,6 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('kk-KZ');
 }
 
-// Аватар-шеңбер
 function Avatar({ name, src, size = 10 }) {
   const cls = `w-${size} h-${size} rounded-2xl object-cover shrink-0`;
   if (src) return <img src={src} alt={name} className={cls} />;
@@ -35,16 +34,13 @@ function Avatar({ name, src, size = 10 }) {
   );
 }
 
-// Диалог тізіміндегі жолақ
-function ConvItem({ active, onClick, avatar, name, sub, unread, lastMsg, lastAt }) {
+function ConvItem({ active, onClick, onDelete, avatar, name, sub, unread, lastMsg, lastAt }) {
   return (
-    <button
-      onClick={onClick}
-      className={`w-full flex items-center gap-3 px-4 py-3 smooth text-left ${
-        active
-          ? 'bg-white/15 rounded-2xl'
-          : 'hover:bg-white/8 rounded-2xl'
+    <div
+      className={`group relative flex items-center gap-3 px-4 py-3 smooth cursor-pointer rounded-2xl ${
+        active ? 'bg-white/15' : 'hover:bg-white/8'
       }`}
+      onClick={onClick}
     >
       <div className="relative shrink-0">
         <Avatar name={name} src={avatar} size={10} />
@@ -63,7 +59,17 @@ function ConvItem({ active, onClick, avatar, name, sub, unread, lastMsg, lastAt 
             {name}
           </span>
           {lastAt && (
-            <span className="text-[10px] text-muted shrink-0 ml-1">{formatTime(lastAt)}</span>
+            <span className="text-[10px] text-muted shrink-0 ml-1 group-hover:hidden">{formatTime(lastAt)}</span>
+          )}
+          {onDelete && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              className="hidden group-hover:flex items-center justify-center w-6 h-6 rounded-lg smooth opacity-0 group-hover:opacity-100 hover:text-red-400 shrink-0"
+              style={{ color: 'var(--clr-muted)' }}
+              title="Чатты жою"
+            >
+              <Trash2 size={13} />
+            </button>
           )}
         </div>
         {sub && <div className="text-[11px] text-muted truncate">{sub}</div>}
@@ -71,15 +77,15 @@ function ConvItem({ active, onClick, avatar, name, sub, unread, lastMsg, lastAt 
           <div className="text-xs text-muted truncate mt-0.5">{lastMsg}</div>
         )}
       </div>
-    </button>
+    </div>
   );
 }
 
 export default function Chat() {
   const { user } = useAuth();
+  const { showConfirm } = useModal();
   const location = useLocation();
 
-  // Белсенді чат: { type: 'direct'|'group', id, name, avatar?, groupName? }
   const [activeChat, setActiveChat] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -90,15 +96,16 @@ export default function Chat() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [showSearch, setShowSearch] = useState(false);
-  // мобильде sidebar/chat ауысу
   const [mobileSidebar, setMobileSidebar] = useState(true);
   const [membersReads, setMembersReads] = useState([]);
+  const [deletingMsgId, setDeletingMsgId] = useState(null);
 
   const bottomRef = useRef(null);
   const pollRef = useRef(null);
   const inputRef = useRef(null);
+  const chatBodyRef = useRef(null);
+  const isNearBottom = useRef(true);
 
-  // Диалог тізімін жүктеу
   const loadConversations = useCallback(async () => {
     try {
       const { data } = await api.get('/messages/conversations');
@@ -110,7 +117,6 @@ export default function Chat() {
     loadConversations();
   }, [loadConversations]);
 
-  // Профиль бетінен "Хабарлама жіберу" арқылы ашу
   useEffect(() => {
     if (location.state?.openChatWith) {
       openDirectChat(location.state.openChatWith);
@@ -121,7 +127,6 @@ export default function Chat() {
     }
   }, []);
 
-  // Хабарламаларды жүктеу
   const loadMessages = useCallback(async (chat) => {
     if (!chat) return;
     try {
@@ -136,27 +141,32 @@ export default function Chat() {
     } catch { /* тыныш */ }
   }, []);
 
-  // Белсенді чат ауысқанда
   useEffect(() => {
     if (!activeChat) return;
 
     setLoadingMsgs(true);
     setMessages([]);
+    isNearBottom.current = true;
     loadMessages(activeChat).finally(() => setLoadingMsgs(false));
 
-    // Поллинг — 3 секунд сайын жаңарту
     clearInterval(pollRef.current);
     pollRef.current = setInterval(() => loadMessages(activeChat), 3000);
 
     return () => clearInterval(pollRef.current);
   }, [activeChat, loadMessages]);
 
-  // Жаңа хабарлама келгенде прокрутка
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (isNearBottom.current) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
   }, [messages]);
 
-  // Пайдаланушы іздеу
+  const handleChatScroll = () => {
+    const el = chatBodyRef.current;
+    if (!el) return;
+    isNearBottom.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+  };
+
   useEffect(() => {
     if (!searchQuery.trim()) { setSearchResults([]); return; }
     const t = setTimeout(async () => {
@@ -180,6 +190,29 @@ export default function Chat() {
     setMobileSidebar(false);
   };
 
+  const deleteConversation = async (userId) => {
+    const ok = await showConfirm('Чатты толығымен жоясыз ба? Барлық хабарламалар өшіріледі.', { danger: true });
+    if (!ok) return;
+    try {
+      await api.delete(`/messages/conversation/${userId}`);
+      setConversations((prev) => prev.filter((c) => c.id !== userId));
+      if (activeChat?.type === 'direct' && activeChat.id === userId) {
+        setActiveChat(null);
+        setMessages([]);
+      }
+    } catch { /* тыныш */ }
+  };
+
+  const deleteMessage = async (msgId) => {
+    setDeletingMsgId(msgId);
+    try {
+      await api.delete(`/messages/${msgId}`);
+      setMessages((prev) => prev.filter((m) => m.id !== msgId));
+    } catch { /* тыныш */ } finally {
+      setDeletingMsgId(null);
+    }
+  };
+
   const sendMessage = async (e) => {
     e.preventDefault();
     if (!input.trim() || !activeChat || sending) return;
@@ -195,6 +228,7 @@ export default function Chat() {
       } else {
         await api.post(`/messages/group/${encodeURIComponent(activeChat.groupName)}`, { content: text });
       }
+      isNearBottom.current = true;
       await loadMessages(activeChat);
       await loadConversations();
     } catch (err) {
@@ -206,7 +240,6 @@ export default function Chat() {
     }
   };
 
-  // Күн бөлгіші (хабарламалар арасында)
   const renderMessages = () => {
     let lastDate = '';
     return messages.map((m) => {
@@ -232,23 +265,38 @@ export default function Chat() {
               {!isMine && activeChat?.type === 'group' && (
                 <span className="text-[11px] text-muted mb-0.5 ml-1">{m.sender_name}</span>
               )}
-              <div
-                className="px-4 py-2.5 text-sm leading-relaxed"
-                style={{
-                  background: isMine ? 'var(--clr-accent)' : 'var(--glass)',
-                  color: isMine ? '#fff' : 'var(--clr-text)',
-                  borderRadius: isMine ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
-                  backdropFilter: isMine ? 'none' : 'blur(12px)',
-                  border: isMine ? 'none' : '1px solid var(--glass-border)',
-                  boxShadow: isMine
-                    ? '0 4px 14px rgba(99,102,241,0.35)'
-                    : 'var(--glass-shadow)',
-                  wordBreak: 'break-word',
-                }}
-              >
-                {m.content}
+              <div className={`group/msg relative flex items-end gap-1.5 ${isMine ? 'flex-row-reverse' : 'flex-row'}`}>
+                {(isMine || (user.role === 'admin' && activeChat?.type === 'group')) && (
+                  <button
+                    onClick={() => deleteMessage(m.id)}
+                    disabled={deletingMsgId === m.id}
+                    className="opacity-0 group-hover/msg:opacity-100 smooth flex items-center justify-center w-6 h-6 rounded-lg hover:text-red-400 shrink-0 mb-0.5"
+                    style={{ color: 'var(--clr-muted)' }}
+                    title="Жою"
+                  >
+                    {deletingMsgId === m.id
+                      ? <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                      : <Trash2 size={13} />
+                    }
+                  </button>
+                )}
+                <div
+                  className="px-4 py-2.5 text-sm leading-relaxed"
+                  style={{
+                    background: isMine ? 'var(--clr-accent)' : 'var(--glass)',
+                    color: isMine ? '#fff' : 'var(--clr-text)',
+                    borderRadius: isMine ? '20px 20px 4px 20px' : '20px 20px 20px 4px',
+                    backdropFilter: isMine ? 'none' : 'blur(12px)',
+                    border: isMine ? 'none' : '1px solid var(--glass-border)',
+                    boxShadow: isMine
+                      ? '0 4px 14px rgba(99,102,241,0.35)'
+                      : 'var(--glass-shadow)',
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {m.content}
+                </div>
               </div>
-              {/* Оқылды белгілері */}
               {isMine && activeChat?.type === 'direct' && (
                 <div className="flex items-center gap-0.5 mt-0.5 px-1">
                   <span className="text-[10px] text-muted">{formatTime(m.created_at)}</span>
@@ -286,7 +334,6 @@ export default function Chat() {
     <div className="max-w-6xl mx-auto px-3 md:px-5 py-3 md:py-6 h-[calc(100dvh-200px)] md:h-[calc(100vh-120px)]">
       <div className="flex gap-4 h-full">
 
-        {/* ═══ СОЛ ЖАҚ: диалог тізімі ═══ */}
         <div className={`glass-panel flex flex-col overflow-hidden w-full md:w-72 md:shrink-0 md:flex ${mobileSidebar ? 'flex' : 'hidden'}`}>
           <div className="px-4 py-4 border-b border-white/10">
             <div className="flex items-center justify-between mb-3">
@@ -300,7 +347,6 @@ export default function Chat() {
               </button>
             </div>
 
-            {/* Пайдаланушы іздеу */}
             {showSearch && (
               <div>
                 <input
@@ -333,7 +379,6 @@ export default function Chat() {
           </div>
 
           <div className="flex-1 overflow-y-auto py-2 px-2 space-y-1">
-            {/* Топтық чат (егер топ болса) */}
             {user.group_name && (
               <ConvItem
                 active={activeChat?.type === 'group' && activeChat.groupName === user.group_name}
@@ -344,10 +389,14 @@ export default function Chat() {
               />
             )}
 
-            {/* Жеке диалогтар */}
             {conversations.length === 0 && !user.group_name ? (
-              <div className="text-center text-muted text-xs py-8 px-3">
-                Хабарламалар жоқ.<br/>✏️ батырмасын басып жаңа чат бастаңыз.
+              <div className="text-center text-muted py-10 px-4 flex flex-col items-center gap-2">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.1)' }}>
+                  <MessageSquare size={22} className="text-accent" />
+                </div>
+                <p className="text-xs leading-relaxed">Хабарламалар жоқ.<br/>
+                  <button onClick={() => setShowSearch(true)} className="text-accent hover:underline">Жаңа чат бастаңыз</button>
+                </p>
               </div>
             ) : (
               conversations.map((c) => (
@@ -355,6 +404,7 @@ export default function Chat() {
                   key={c.id}
                   active={activeChat?.type === 'direct' && activeChat.id === c.id}
                   onClick={() => openDirectChat(c)}
+                  onDelete={() => deleteConversation(c.id)}
                   avatar={c.avatar_url}
                   name={c.full_name}
                   sub={c.group_name}
@@ -367,11 +417,9 @@ export default function Chat() {
           </div>
         </div>
 
-        {/* ═══ ОҢ ЖАҚ: хабарламалар ═══ */}
         <div className={`glass-panel flex-1 flex flex-col overflow-hidden md:flex ${mobileSidebar ? 'hidden' : 'flex'}`}>
           {activeChat ? (
             <>
-              {/* Тақырып жолағы */}
               <div className="px-4 py-3 md:py-4 border-b border-white/10 flex items-center gap-3">
                 {activeChat.type === 'group' ? (
                   <Link to={`/groups/${encodeURIComponent(activeChat.groupName)}`} className="shrink-0">
@@ -403,8 +451,7 @@ export default function Chat() {
                 </div>
               </div>
 
-              {/* Хабарламалар алаңы */}
-              <div className="flex-1 overflow-y-auto px-4 py-4">
+              <div ref={chatBodyRef} onScroll={handleChatScroll} className="flex-1 overflow-y-auto px-4 py-4">
                 {loadingMsgs ? (
                   <div className="text-center text-muted text-sm py-10">Жүктелуде...</div>
                 ) : messages.length === 0 ? (
@@ -417,7 +464,6 @@ export default function Chat() {
                 <div ref={bottomRef} />
               </div>
 
-              {/* Жіберу қатесі */}
               {sendError && (
                 <div
                   className="mx-4 mb-2 px-3 py-2 rounded-xl text-xs flex items-center justify-between gap-2"
@@ -430,7 +476,6 @@ export default function Chat() {
                 </div>
               )}
 
-              {/* Енгізу алаңы */}
               <form onSubmit={sendMessage} className="px-4 py-3 border-t border-white/10 flex gap-2">
                 <input
                   ref={inputRef}
@@ -460,17 +505,22 @@ export default function Chat() {
               </form>
             </>
           ) : (
-            <div className="flex-1 flex items-center justify-center flex-col gap-3 text-center px-8">
-              <div
-                className="w-16 h-16 rounded-3xl flex items-center justify-center mb-1"
-                style={{ background: 'rgba(99,102,241,0.12)' }}
-              >
-                <MessageSquare size={28} className="text-accent" />
+            <div className="flex-1 flex items-center justify-center flex-col gap-4 text-center px-8">
+              <svg width="130" height="110" viewBox="0 0 130 110" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-55">
+                <circle cx="65" cy="58" r="42" fill="rgba(99,102,241,0.07)" />
+                <rect x="22" y="36" width="52" height="24" rx="12" fill="rgba(99,102,241,0.18)" />
+                <circle cx="22" cy="60" r="6" fill="rgba(99,102,241,0.18)" />
+                <line x1="32" y1="46" x2="64" y2="46" stroke="rgba(99,102,241,0.45)" strokeWidth="2" strokeLinecap="round" />
+                <line x1="32" y1="52" x2="58" y2="52" stroke="rgba(99,102,241,0.3)" strokeWidth="1.5" strokeLinecap="round" />
+                <rect x="56" y="68" width="52" height="24" rx="12" fill="rgba(167,139,250,0.2)" />
+                <circle cx="108" cy="68" r="6" fill="rgba(167,139,250,0.2)" />
+                <line x1="66" y1="78" x2="98" y2="78" stroke="rgba(167,139,250,0.45)" strokeWidth="2" strokeLinecap="round" />
+                <line x1="66" y1="84" x2="88" y2="84" stroke="rgba(167,139,250,0.3)" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              <div>
+                <h3 className="text-base font-semibold text-theme mb-1">Чат таңдаңыз</h3>
+                <p className="text-sm text-muted">Сол жақтан диалог таңдаңыз немесе жаңа хат бастаңыз</p>
               </div>
-              <h3 className="text-base font-semibold text-theme">Чат таңдаңыз</h3>
-              <p className="text-sm text-muted">
-                Сол жақтан диалог таңдаңыз немесе жаңа хат бастаңыз
-              </p>
             </div>
           )}
         </div>

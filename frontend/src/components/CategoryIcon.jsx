@@ -18,8 +18,25 @@ export function CategoryBadgeIcon({ category, size = 13 }) {
 export function CategoryCardIcon({ category, className = '' }) {
   const item = MAP[category] || MAP.other;
   return (
-    <div className={`w-full h-full flex items-center justify-center ${className}`} style={{ background: item.bg }}>
-      <item.Icon size={44} style={{ color: item.color }} strokeWidth={1.5} />
+    <div
+      className={`w-full h-full flex items-center justify-center relative overflow-hidden ${className}`}
+      style={{ background: item.bg }}
+    >
+      {/* Нүктелі тор паттерні */}
+      <svg
+        className="absolute inset-0 w-full h-full"
+        xmlns="http://www.w3.org/2000/svg"
+        style={{ opacity: 0.18 }}
+        aria-hidden="true"
+      >
+        <defs>
+          <pattern id={`dots-${category}`} x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+            <circle cx="2" cy="2" r="1.2" fill={item.color} />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill={`url(#dots-${category})`} />
+      </svg>
+      <item.Icon size={44} style={{ color: item.color }} strokeWidth={1.5} className="relative z-10" />
     </div>
   );
 }

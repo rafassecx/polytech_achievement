@@ -39,7 +39,7 @@ router.get('/unread-count', authMiddleware, async (req, res) => {
   }
 });
 
-// PATCH /api/notifications/read-all  ← должен быть ВЫШЕ /:id/read
+// PATCH /api/notifications/read-all — маршрут /:id/read-тан жоғары болуы керек
 router.patch('/read-all', authMiddleware, async (req, res) => {
   try {
     await pool.query(

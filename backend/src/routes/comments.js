@@ -5,7 +5,7 @@ const { createNotification } = require('../utils/notifications');
 
 const router = express.Router();
 
-// POST /api/comments — добавить комментарий
+// POST /api/comments
 router.post('/', authMiddleware, async (req, res) => {
   try {
     const { achievement_id, content } = req.body;
@@ -25,7 +25,6 @@ router.post('/', authMiddleware, async (req, res) => {
       [achievement_id, req.user.id, content.trim()]
     );
 
-    // Возвращаем с инфо об авторе
     const enriched = await pool.query(`
       SELECT c.*, u.full_name AS author_name, u.avatar_url AS author_avatar, u.role AS author_role
       FROM comments c
@@ -33,7 +32,6 @@ router.post('/', authMiddleware, async (req, res) => {
       WHERE c.id = $1
     `, [result.rows[0].id]);
 
-        // Уведомить автора достижения (если это не он сам)
     const ownerRes = await pool.query(
       'SELECT user_id, title FROM achievements WHERE id = $1',
       [achievement_id]
@@ -57,7 +55,7 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-// GET /api/comments/:achievement_id — все комментарии к достижению
+// GET /api/comments/:achievement_id
 router.get('/:achievement_id', async (req, res) => {
   try {
     const { achievement_id } = req.params;
@@ -76,7 +74,7 @@ router.get('/:achievement_id', async (req, res) => {
   }
 });
 
-// DELETE /api/comments/:id — удалить (только свой или админ)
+// DELETE /api/comments/:id
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
     const { id } = req.params;

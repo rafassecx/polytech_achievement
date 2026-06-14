@@ -5,7 +5,6 @@ const { createNotification, notifyAllCurators } = require('../utils/notification
 
 const router = express.Router();
 
-// ===== СОЗДАТЬ ДОСТИЖЕНИЕ =====
 // POST /api/achievements
 router.post('/', authMiddleware, async (req, res) => {
   try {
@@ -15,8 +14,7 @@ router.post('/', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'Название и категория обязательны' });
     }
 
-    // Если куратор/админ добавляет студенту — используем target_user_id
-    // и одобряем сразу. Студент добавляет себе — статус "pending".
+    // куратор/admin жасаса — бірден approved, студент жасаса — pending
     let user_id = req.user.id;
     let status = 'pending';
 
@@ -34,7 +32,6 @@ router.post('/', authMiddleware, async (req, res) => {
 
     const created = result.rows[0];
     
-    // Если pending — уведомить кураторов
     if (created.status === 'pending') {
       const authorRes = await pool.query(
         'SELECT full_name FROM users WHERE id = $1',
@@ -47,7 +44,6 @@ router.post('/', authMiddleware, async (req, res) => {
       }).catch(() => {});
     }
 
-    // Если куратор создал для студента — уведомить студента
     else if (created.user_id !== req.user.id) {
       createNotification({
         user_id: created.user_id,
@@ -68,7 +64,6 @@ router.post('/', authMiddleware, async (req, res) => {
   }
 });
 
-// ===== СПИСОК ДОСТИЖЕНИЙ =====
 // GET /api/achievements?status=approved&category=academic&user_id=1&group_name=P22-2B
 router.get('/', async (req, res) => {
   try {
@@ -108,7 +103,6 @@ router.get('/', async (req, res) => {
   }
 });
 
-// ===== ОДНО ДОСТИЖЕНИЕ (с файлами) =====
 // GET /api/achievements/:id
 router.get('/:id', async (req, res) => {
   try {
@@ -145,7 +139,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// ===== МОДЕРАЦИЯ (только куратор/админ) =====
 // PATCH /api/achievements/:id/moderate
 router.patch('/:id/moderate', authMiddleware, checkRole('curator', 'admin'), async (req, res) => {
   try {
@@ -200,7 +193,6 @@ router.patch('/:id/moderate', authMiddleware, checkRole('curator', 'admin'), asy
   }
 });
 
-// ===== УДАЛИТЬ =====
 // DELETE /api/achievements/:id
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
@@ -211,7 +203,6 @@ router.delete('/:id', authMiddleware, async (req, res) => {
       return res.status(404).json({ message: 'Достижение не найдено' });
     }
 
-    // Удалить может только владелец или админ
     if (check.rows[0].user_id !== req.user.id && req.user.role !== 'admin') {
       return res.status(403).json({ message: 'Нет прав на удаление' });
     }

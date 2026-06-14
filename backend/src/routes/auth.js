@@ -6,13 +6,11 @@ const { authMiddleware } = require('../middleware/auth');
 
 const router = express.Router();
 
-// ===== РЕГИСТРАЦИЯ =====
 // POST /api/auth/register
 router.post('/register', async (req, res) => {
   try {
     const { email, password, full_name, group_name } = req.body;
 
-    // Валидация
     if (!email || !password || !full_name) {
       return res.status(400).json({ message: 'Email, пароль и ФИО обязательны' });
     }
@@ -20,16 +18,14 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ message: 'Пароль должен быть минимум 6 символов' });
     }
 
-    // Проверка существования пользователя
     const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);
     if (existing.rows.length > 0) {
       return res.status(409).json({ message: 'Пользователь с таким email уже существует' });
     }
 
-    // Хеширование пароля
     const password_hash = await bcrypt.hash(password, 10);
 
-    // Создание (всегда роль student — admin/curator назначает админ)
+    // роль student — admin/curator назначает отдельно
     const result = await pool.query(
       `INSERT INTO users (email, password_hash, full_name, group_name, role) 
        VALUES ($1, $2, $3, $4, 'student') 
@@ -39,7 +35,6 @@ router.post('/register', async (req, res) => {
 
     const user = result.rows[0];
 
-    // Генерация токена
     const token = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       process.env.JWT_SECRET,
@@ -53,7 +48,6 @@ router.post('/register', async (req, res) => {
   }
 });
 
-// ===== ВХОД =====
 // POST /api/auth/login
 router.post('/login', async (req, res) => {
   try {
@@ -93,8 +87,7 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// ===== ТЕКУЩИЙ ПОЛЬЗОВАТЕЛЬ =====
-// GET /api/auth/me  (требует токен в заголовке)
+// GET /api/auth/me
 router.get('/me', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(

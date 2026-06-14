@@ -22,13 +22,11 @@ const { answerCallback, editMessageText } = require('./utils/notifications');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-// Статическая раздача загруженных файлов
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
-// Routes
+
 app.use('/api/auth', authRoutes);
 app.use('/api/achievements', achievementRoutes);
 app.use('/api/upload', uploadRoutes);
@@ -42,9 +40,8 @@ app.use('/api/stats', statsRoutes);
 app.use('/api/friends', friendRoutes);
 app.use('/api/bookmarks', bookmarkRoutes);
 
-// Telegram webhook — принимает callback_query от inline-кнопок
 app.post('/api/tg-hook', async (req, res) => {
-  res.sendStatus(200); // сразу отвечаем Telegram'у
+  res.sendStatus(200);
 
   const update = req.body;
   const cbq = update?.callback_query;
@@ -61,7 +58,6 @@ app.post('/api/tg-hook', async (req, res) => {
   }
 
   try {
-    // Кто нажал кнопку — находим по telegram_id
     const userRes = await pool.query(
       'SELECT id, full_name FROM users WHERE telegram_id = $1',
       [String(from.id)]
@@ -108,7 +104,6 @@ app.post('/api/tg-hook', async (req, res) => {
   }
 });
 
-// Главная страница API
 app.get('/', (req, res) => {
   res.json({ 
     message: 'Сервер работает! 🎉',
@@ -116,7 +111,6 @@ app.get('/', (req, res) => {
   });
 });
 
-// Проверка здоровья базы данных
 app.get('/api/health', async (req, res) => {
   try {
     const result = await pool.query('SELECT NOW()');
@@ -134,18 +128,15 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Production: фронтенд статикасын раздаём
 if (process.env.NODE_ENV === 'production') {
   const frontendDist = path.join(__dirname, '..', '..', 'frontend', 'dist');
   app.use(express.static(frontendDist));
-  // SPA роутинг — барлық API емес сұраныстарды index.html-ге жіберу
   app.get('*', (req, res) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return;
     res.sendFile(path.join(frontendDist, 'index.html'));
   });
 }
 
-// Обработчик одного Telegram update (callback_query от inline-кнопок)
 async function handleTelegramUpdate(update) {
   const cbq = update?.callback_query;
   if (!cbq) return;
@@ -200,12 +191,10 @@ async function handleTelegramUpdate(update) {
   }
 }
 
-// Polling — домен болмаса да жұмыс істейді
 async function startPolling() {
   const BOT_TOKEN = process.env.BOT_TOKEN;
   if (!BOT_TOKEN) return;
 
-  // Егер webhook орнатылған болса алдымен жойу керек
   try {
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/deleteWebhook`);
   } catch { /* тыныш */ }
@@ -251,6 +240,5 @@ app.listen(PORT, async () => {
     console.log('Migration note:', e.message);
   }
 
-  // Telegram polling — webhook орнатылмаса автоматты іске қосылады
   startPolling();
 });

@@ -112,7 +112,6 @@ router.post('/direct/:userId', async (req, res) => {
       [me, other, content.trim()]
     );
 
-    // Алушыға Telegram хабарландыру (асинхронно)
     pool.query(
       'SELECT telegram_id, full_name FROM users WHERE id = $1',
       [other]
@@ -170,7 +169,6 @@ router.get('/group/:groupName', async (req, res) => {
       LIMIT 300
     `, [groupName]);
 
-    // Соңғы оқылған хабарламаны жазамыз
     let membersReads = [];
     if (result.rows.length > 0) {
       const latestId = result.rows[result.rows.length - 1].id;
@@ -236,6 +234,59 @@ router.post('/group/:groupName', async (req, res) => {
   } catch (err) {
     console.error('group POST қатесі:', err.message);
     res.status(500).json({ message: 'Хабарлама жіберілмеді: ' + err.message });
+  }
+});
+
+// DELETE /api/messages/conversation/:userId
+router.delete('/conversation/:userId', async (req, res) => {
+  const me = req.user.id;
+  const other = parseInt(req.params.userId);
+  try {
+    await pool.query(
+      `DELETE FROM messages
+       WHERE (sender_id = $1 AND receiver_id = $2)
+          OR (sender_id = $2 AND receiver_id = $1)`,
+      [me, other]
+    );
+    res.json({ message: 'Чат жойылды' });
+  } catch (err) {
+    console.error('conversation delete қатесі:', err.message);
+    res.status(500).json({ message: 'Жою қатесі' });
+  }
+});
+
+// DELETE /api/messages/:id
+// жіберуші өз хатын жоя алады; admin топтық чаттағы кез келген хатты жоя алады
+router.delete('/:id', async (req, res) => {
+  const me = req.user.id;
+  const isAdmin = req.user.role === 'admin';
+  const id = parseInt(req.params.id);
+  try {
+    let result;
+    if (isAdmin) {
+      result = await pool.query(
+        'DELETE FROM messages WHERE id = $1 AND group_name IS NOT NULL RETURNING id',
+        [id]
+      );
+      if (result.rows.length === 0) {
+        result = await pool.query(
+          'DELETE FROM messages WHERE id = $1 AND sender_id = $2 RETURNING id',
+          [id, me]
+        );
+      }
+    } else {
+      result = await pool.query(
+        'DELETE FROM messages WHERE id = $1 AND sender_id = $2 RETURNING id',
+        [id, me]
+      );
+    }
+    if (result.rows.length === 0) {
+      return res.status(403).json({ message: 'Жою мүмкін емес' });
+    }
+    res.json({ message: 'Хабарлама жойылды' });
+  } catch (err) {
+    console.error('message delete қатесі:', err.message);
+    res.status(500).json({ message: 'Жою қатесі' });
   }
 });
 

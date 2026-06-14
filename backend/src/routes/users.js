@@ -30,7 +30,7 @@ const avatarUpload = multer({
   limits: { fileSize: 5 * 1024 * 1024 }
 });
 
-// ===== СПИСОК ПОЛЬЗОВАТЕЛЕЙ (admin/curator) =====
+// GET /api/users — admin/curator
 router.get('/', authMiddleware, checkRole('curator', 'admin'), async (req, res) => {
   try {
     const { role, group_name, search, limit = 50, offset = 0 } = req.query;
@@ -57,8 +57,7 @@ router.get('/', authMiddleware, checkRole('curator', 'admin'), async (req, res) 
   }
 });
 
-// ===== ОБНОВИТЬ ПРОФИЛЬ =====
-// Студенттер топты тікелей өзгерте алмайды — group_name игнорируется
+// студенттер топты тікелей өзгерте алмайды — group_name игнорируется
 router.put('/me', authMiddleware, async (req, res) => {
   try {
     const { full_name, bio, group_name } = req.body;
@@ -81,7 +80,6 @@ router.put('/me', authMiddleware, async (req, res) => {
   }
 });
 
-// ===== СМЕНА ПАРОЛЯ =====
 router.post('/me/password', authMiddleware, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -101,7 +99,6 @@ router.post('/me/password', authMiddleware, async (req, res) => {
   }
 });
 
-// ===== TELEGRAM КОД =====
 router.post('/me/telegram-code', authMiddleware, async (req, res) => {
   try {
     const { code, expires_at } = generateCode(req.user.id);
@@ -112,7 +109,6 @@ router.post('/me/telegram-code', authMiddleware, async (req, res) => {
   }
 });
 
-// ===== TELEGRAM ОТВЯЗАТЬ =====
 router.post('/me/telegram-unlink', authMiddleware, async (req, res) => {
   try {
     await pool.query(
@@ -126,7 +122,6 @@ router.post('/me/telegram-unlink', authMiddleware, async (req, res) => {
   }
 });
 
-// ===== АВАТАР =====
 router.post('/me/avatar', authMiddleware, avatarUpload.single('avatar'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ message: 'Файл не загружен' });
@@ -149,7 +144,6 @@ router.post('/me/avatar', authMiddleware, avatarUpload.single('avatar'), async (
   }
 });
 
-// ===== ТЕКУЩИЙ ЗАПРОС НА СМЕНУ ГРУППЫ =====
 router.get('/me/group-request', authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(
@@ -163,7 +157,6 @@ router.get('/me/group-request', authMiddleware, async (req, res) => {
   }
 });
 
-// ===== ПОДАТЬ ЗАПРОС НА СМЕНУ ГРУППЫ =====
 router.post('/me/group-request', authMiddleware, async (req, res) => {
   const { requested_group } = req.body;
   if (!requested_group?.trim()) return res.status(400).json({ message: 'Топ атын жазыңыз' });
@@ -187,7 +180,6 @@ router.post('/me/group-request', authMiddleware, async (req, res) => {
       [req.user.id, current, requested_group.trim()]
     );
 
-    // Барлық кураторлар мен adminдерді хабардар ету
     const curators = await pool.query(
       `SELECT id FROM users WHERE role IN ('curator', 'admin') AND is_active = TRUE AND id != $1`,
       [req.user.id]
@@ -210,7 +202,6 @@ router.post('/me/group-request', authMiddleware, async (req, res) => {
   }
 });
 
-// ===== ОТМЕНИТЬ СВОЙ ЗАПРОС =====
 router.delete('/me/group-request', authMiddleware, async (req, res) => {
   try {
     await pool.query(
@@ -224,7 +215,6 @@ router.delete('/me/group-request', authMiddleware, async (req, res) => {
   }
 });
 
-// ===== СПИСОК ЗАПРОСОВ НА СМЕНУ ГРУППЫ (curator/admin) =====
 router.get('/group-requests', authMiddleware, checkRole('curator', 'admin'), async (req, res) => {
   try {
     const result = await pool.query(`
@@ -241,7 +231,6 @@ router.get('/group-requests', authMiddleware, checkRole('curator', 'admin'), asy
   }
 });
 
-// ===== ОДОБРИТЬ ЗАПРОС =====
 router.patch('/group-requests/:id/approve', authMiddleware, checkRole('curator', 'admin'), async (req, res) => {
   const { id } = req.params;
   try {
@@ -272,7 +261,6 @@ router.patch('/group-requests/:id/approve', authMiddleware, checkRole('curator',
   }
 });
 
-// ===== ОТКЛОНИТЬ ЗАПРОС =====
 router.patch('/group-requests/:id/reject', authMiddleware, checkRole('curator', 'admin'), async (req, res) => {
   const { id } = req.params;
   const { moderator_comment } = req.body;
@@ -305,7 +293,7 @@ router.patch('/group-requests/:id/reject', authMiddleware, checkRole('curator', 
   }
 });
 
-// ===== УЧАСТНИКИ ГРУППЫ (публичный) =====
+// GET /api/users/group/:groupName
 router.get('/group/:groupName', async (req, res) => {
   const { groupName } = req.params;
   try {
@@ -330,7 +318,7 @@ router.get('/group/:groupName', async (req, res) => {
   }
 });
 
-// ===== ПРОФИЛЬ ПОЛЬЗОВАТЕЛЯ (публичный) =====
+// GET /api/users/:id
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
@@ -360,7 +348,6 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// ===== СПИСОК ДРУЗЕЙ ПОЛЬЗОВАТЕЛЯ (публичный) =====
 router.get('/:id/friends', async (req, res) => {
   const { id } = req.params;
   try {
@@ -379,7 +366,6 @@ router.get('/:id/friends', async (req, res) => {
   }
 });
 
-// ===== СМЕНИТЬ РОЛЬ (admin) =====
 router.patch('/:id/role', authMiddleware, checkRole('admin'), async (req, res) => {
   try {
     const { id } = req.params;
@@ -398,7 +384,6 @@ router.patch('/:id/role', authMiddleware, checkRole('admin'), async (req, res) =
   }
 });
 
-// ===== БЛОКИРОВКА / РАЗБЛОКИРОВКА (admin) =====
 router.patch('/:id/toggle-active', authMiddleware, checkRole('admin'), async (req, res) => {
   try {
     const { id } = req.params;

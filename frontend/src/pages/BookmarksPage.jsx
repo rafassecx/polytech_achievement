@@ -34,15 +34,18 @@ export default function BookmarksPage() {
       {loading ? (
         <div className="text-center text-muted py-16 text-sm">Жүктелуде...</div>
       ) : bookmarks.length === 0 ? (
-        <div className="glass-panel text-center py-16">
-          <div
-            className="w-14 h-14 rounded-3xl flex items-center justify-center mx-auto mb-4"
-            style={{ background: 'rgba(99,102,241,0.10)' }}
-          >
-            <Bookmark size={24} className="text-accent" />
-          </div>
-          <p className="text-muted text-sm">Таңдаулыларыңыз жоқ</p>
-          <Link to="/" className="text-accent text-sm hover:underline mt-2 inline-block">
+        <div className="glass-panel text-center py-14 px-8 flex flex-col items-center">
+          <svg width="110" height="100" viewBox="0 0 110 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-5 opacity-55">
+            <circle cx="55" cy="52" r="36" fill="rgba(99,102,241,0.08)" />
+            {/* Кітапша */}
+            <rect x="30" y="30" width="28" height="38" rx="4" fill="rgba(99,102,241,0.15)" />
+            <path d="M30 34 Q44 30 58 34 L58 68 Q44 64 30 68 Z" fill="rgba(99,102,241,0.22)" />
+            {/* Жер белгісі */}
+            <path d="M68 24 L68 52 L61 46 L54 52 L54 24 Z" fill="rgba(245,158,11,0.55)" stroke="rgba(245,158,11,0.8)" strokeWidth="1" strokeLinejoin="round" />
+          </svg>
+          <p className="text-theme font-semibold text-base mb-1">Таңдаулылар жоқ</p>
+          <p className="text-muted text-sm mb-4">Жетістіктерді таңдаулыларға қосыңыз</p>
+          <Link to="/" className="text-accent text-sm hover:underline font-medium">
             Жетістіктерді қарау
           </Link>
         </div>

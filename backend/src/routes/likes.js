@@ -6,7 +6,7 @@ const { createNotification } = require('../utils/notifications');
 
 const router = express.Router();
 
-// POST /api/likes/:achievement_id — поставить или убрать лайк (toggle)
+// POST /api/likes/:achievement_id
 router.post('/:achievement_id', authMiddleware, async (req, res) => {
   try {
     const { achievement_id } = req.params;
@@ -17,16 +17,13 @@ router.post('/:achievement_id', authMiddleware, async (req, res) => {
     );
 
     if (existing.rows.length > 0) {
-      // Уже лайкнул — убираем
       await pool.query('DELETE FROM likes WHERE id = $1', [existing.rows[0].id]);
     } else {
-      // Не лайкал — ставим
       await pool.query(
         'INSERT INTO likes (achievement_id, user_id) VALUES ($1, $2)',
         [achievement_id, req.user.id]
       );
 
-      // Уведомить автора
       const ownerRes = await pool.query(
         'SELECT user_id, title FROM achievements WHERE id = $1',
         [achievement_id]
@@ -63,7 +60,7 @@ router.post('/:achievement_id', authMiddleware, async (req, res) => {
   }
 });
 
-// GET /api/likes/:achievement_id — узнать количество и поставил ли текущий юзер
+// GET /api/likes/:achievement_id
 router.get('/:achievement_id', async (req, res) => {
   try {
     const { achievement_id } = req.params;
