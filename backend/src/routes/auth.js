@@ -12,10 +12,14 @@ router.post('/register', async (req, res) => {
     const { email, password, full_name, group_name } = req.body;
 
     if (!email || !password || !full_name) {
-      return res.status(400).json({ message: 'Email, пароль и ФИО обязательны' });
+      return res.status(400).json({ message: 'Email, пароль және аты-жөні міндетті' });
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Email форматы дұрыс емес' });
     }
     if (password.length < 6) {
-      return res.status(400).json({ message: 'Пароль должен быть минимум 6 символов' });
+      return res.status(400).json({ message: 'Құпия сөз кемінде 6 таңба болуы керек' });
     }
 
     const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email]);

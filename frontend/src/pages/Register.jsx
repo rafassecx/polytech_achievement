@@ -37,6 +37,11 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    if (!emailRegex.test(form.email)) {
+      setError(t('register.errorEmail'));
+      return;
+    }
     if (form.password !== form.confirmPassword) {
       setError(t('register.errorMatch'));
       return;
