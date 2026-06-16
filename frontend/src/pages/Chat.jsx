@@ -331,7 +331,7 @@ export default function Chat() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-3 md:px-5 py-3 md:py-6 h-[calc(100dvh-200px)] md:h-[calc(100vh-120px)]">
+    <div className="fixed inset-x-0 top-15 bottom-15 px-2 py-2 md:relative md:inset-auto md:top-auto md:bottom-auto md:max-w-6xl md:mx-auto md:px-5 md:py-6 md:h-[calc(100vh-120px)]">
       <div className="flex gap-4 h-full">
 
         <div className={`glass-panel flex flex-col overflow-hidden w-full md:w-72 md:shrink-0 md:flex ${mobileSidebar ? 'flex' : 'hidden'}`}>
