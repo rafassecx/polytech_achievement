@@ -252,7 +252,7 @@ export default function Home() {
                 background: 'rgba(16,185,129,0.13)', backdropFilter: 'blur(12px)',
                 border: '1px solid rgba(16,185,129,0.24)',
                 animation: 'orbFloat 8s ease-in-out infinite alternate', '--ty': '9px', animationDelay: '-4s' }}>
-              <GraduationCap size={18} style={{ color: '#34d399' }} />
+              <Award size={18} style={{ color: '#34d399' }} />
             </div>
 
             <div className="absolute z-10 flex items-center justify-center rounded-2xl"
