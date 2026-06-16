@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Login() {
@@ -10,6 +11,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   const { login } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/';
@@ -22,7 +24,7 @@ export default function Login() {
       await login(email, password);
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'Кіру қатесі');
+      setError(err.response?.data?.message || t('login.error'));
     } finally {
       setLoading(false);
     }
@@ -33,7 +35,6 @@ export default function Login() {
       <div className="w-full max-w-4xl">
         <div className="glass-card overflow-hidden flex flex-col md:flex-row">
 
-          {/* Сол жақ — декоративтік сурет */}
           <div className="relative hidden md:flex md:w-5/12 items-end justify-start p-8 overflow-hidden">
             <img
               src="https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?w=800&q=80&auto=format&fit=crop"
@@ -55,16 +56,11 @@ export default function Login() {
               <div className="text-3xl font-bold text-white mb-2">
                 Achiev<span style={{ color: '#c4b5fd' }}>ly</span>
               </div>
-              <p className="text-white/70 text-sm leading-relaxed">
-                Студенттердің жетістіктерін бақылаудың ең оңай жолы
-              </p>
+              <p className="text-white/70 text-sm leading-relaxed">{t('login.slogan')}</p>
             </div>
           </div>
 
-          {/* Оң жақ — форма */}
           <div className="flex-1 p-8 md:p-10">
-
-            {/* Мобильде logo */}
             <div className="flex items-center gap-3 mb-7 md:mb-8">
               <div
                 className="w-10 h-10 rounded-2xl flex items-center justify-center md:hidden"
@@ -77,7 +73,7 @@ export default function Login() {
                   <span className="text-theme">Achiev</span>
                   <span style={{ color: '#818cf8' }}>ly</span>
                 </div>
-                <p className="text-sm text-muted">Аккаунтыңызға кіріңіз</p>
+                <p className="text-sm text-muted">{t('login.subtitle')}</p>
               </div>
             </div>
 
@@ -97,7 +93,7 @@ export default function Login() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-theme">Құпиясөз</label>
+                <label className="text-sm font-medium text-theme">{t('login.password')}</label>
                 <input
                   type="password"
                   value={password}
@@ -114,13 +110,13 @@ export default function Login() {
                 disabled={loading}
                 className="btn-primary w-full py-3 mt-2"
               >
-                {loading ? 'Кіруде...' : 'Кіру'}
+                {loading ? t('login.loading') : t('login.submit')}
               </button>
 
               <p className="text-center text-sm text-muted pt-1">
-                Аккаунт жоқ па?{' '}
+                {t('login.noAccount')}{' '}
                 <Link to="/register" className="text-accent font-medium hover:underline">
-                  Тіркелу
+                  {t('nav.register')}
                 </Link>
               </p>
             </div>

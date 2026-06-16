@@ -1,20 +1,21 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { X, Lightbulb } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { CATEGORIES, CATEGORY_EMOJI } from '../lib/constants';
-
-const CATEGORY_LABELS = {
-  academic: 'Оқу',
-  sport: 'Спорт',
-  cultural: 'Мәдениет',
-  social: 'Қоғамдық',
-  other: 'Басқа',
-};
 
 
 export default function AddAchievement() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
+  const CATEGORY_LABELS = {
+    academic: t('achievements.category.academic'),
+    sport: t('achievements.category.sport'),
+    cultural: t('achievements.category.cultural'),
+    social: t('achievements.category.social'),
+    other: t('achievements.category.other'),
+  };
   const [form, setForm] = useState({
     title: '', description: '', category: 'academic', event_date: ''
   });
@@ -31,12 +32,12 @@ export default function AddAchievement() {
     e.preventDefault();
     setError('');
     setLoading(true);
-    setProgress('Жетістік жасалуда...');
+    setProgress(t('add.creating'));
     try {
       const { data } = await api.post('/achievements', form);
       const achievementId = data.achievement.id;
       if (files.length > 0) {
-        setProgress(`Файлдар жүктелуде (${files.length})...`);
+        setProgress(`${t('add.uploading')} (${files.length})...`);
         const fd = new FormData();
         files.forEach((file) => fd.append('files', file));
         await api.post(`/upload/${achievementId}`, fd, {
@@ -45,7 +46,7 @@ export default function AddAchievement() {
       }
       navigate(`/achievements/${achievementId}`);
     } catch (err) {
-      setError(err.response?.data?.message || 'Қате орын алды');
+      setError(err.response?.data?.message || t('add.error'));
       setLoading(false);
       setProgress('');
     }
@@ -54,15 +55,15 @@ export default function AddAchievement() {
   return (
     <div className="max-w-2xl mx-auto px-5 py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-theme">Жаңа жетістік</h1>
-        <p className="text-muted text-sm mt-1">Жетістігіңізді тіркеп, басқалармен бөлісіңіз</p>
+        <h1 className="text-2xl font-bold text-theme">{t('add.title')}</h1>
+        <p className="text-muted text-sm mt-1">{t('add.subtitle')}</p>
       </div>
 
       <form onSubmit={handleSubmit} className="glass-panel p-7 space-y-5">
         {error && <div className="alert-error">{error}</div>}
 
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-theme">Атауы *</label>
+          <label className="text-sm font-medium text-theme">{t('add.nameLabel')} *</label>
           <input
             type="text"
             value={form.title}
@@ -70,12 +71,12 @@ export default function AddAchievement() {
             required
             minLength={3}
             className="glass-input"
-            placeholder="Мысалы: Республикалық олимпиада — 1 орын"
+            placeholder={t('add.namePlaceholder')}
           />
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-theme">Категория *</label>
+          <label className="text-sm font-medium text-theme">{t('add.categoryLabel')} *</label>
           <select value={form.category} onChange={update('category')} required className="glass-input">
             {CATEGORIES.map((cat) => (
               <option key={cat} value={cat}>
@@ -87,32 +88,30 @@ export default function AddAchievement() {
 
         {/* Күні */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-theme">Күні</label>
+          <label className="text-sm font-medium text-theme">{t('add.dateLabel')}</label>
           <input
             type="date"
             value={form.event_date}
             onChange={update('event_date')}
             className="glass-input"
           />
-          <p className="text-[11px] text-muted">Формат: кк/аа/жжжж — немесе календарьды басыңыз</p>
+          <p className="text-[11px] text-muted">{t('add.dateHint')}</p>
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-theme">Сипаттама</label>
+          <label className="text-sm font-medium text-theme">{t('add.descLabel')}</label>
           <textarea
             value={form.description}
             onChange={update('description')}
             rows={5}
             className="glass-input"
-            placeholder="Қандай іс-шара болды? Қандай нәтиже алдыңыз?"
+            placeholder={t('add.descPlaceholder')}
           />
         </div>
 
         {/* Файлдар */}
         <div className="space-y-1.5">
-          <label className="text-sm font-medium text-theme">
-            Файлдар (фото, видео, құжаттар)
-          </label>
+          <label className="text-sm font-medium text-theme">{t('add.filesLabel')}</label>
           <input
             type="file"
             multiple
@@ -144,14 +143,12 @@ export default function AddAchievement() {
               ))}
             </div>
           )}
-          <p className="text-xs text-muted">
-            JPG, PNG, GIF · MP4 · PDF, DOC, DOCX · 50 МБ-ге дейін
-          </p>
+          <p className="text-xs text-muted">{t('add.filesHint')}</p>
         </div>
 
         <div className="alert-warn flex items-start gap-2">
           <Lightbulb size={15} className="shrink-0 mt-0.5" />
-          <span>Жетістігіңіз куратордың растауын күтеді. Расталғаннан кейін лентада көрсетіледі.</span>
+          <span>{t('add.moderationNote')}</span>
         </div>
 
         <div className="flex gap-3">
@@ -160,7 +157,7 @@ export default function AddAchievement() {
             disabled={loading}
             className="btn-primary flex-1 py-3 rounded-2xl"
           >
-            {loading ? (progress || 'Жіберілуде...') : 'Жетістікті қосу'}
+            {loading ? (progress || t('add.submitting')) : t('add.submit')}
           </button>
           <button
             type="button"
@@ -168,7 +165,7 @@ export default function AddAchievement() {
             disabled={loading}
             className="btn-glass px-6 py-3"
           >
-            Бас тарту
+            {t('add.cancel')}
           </button>
         </div>
       </form>

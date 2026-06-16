@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function Register() {
@@ -11,6 +12,7 @@ export default function Register() {
   const [loading, setLoading] = useState(false);
 
   const { register } = useAuth();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const update = (field) => (e) => setForm({ ...form, [field]: e.target.value });
@@ -19,11 +21,11 @@ export default function Register() {
     e.preventDefault();
     setError('');
     if (form.password !== form.confirmPassword) {
-      setError('Құпиясөздер сәйкес келмейді');
+      setError(t('register.errorMatch'));
       return;
     }
     if (form.password.length < 6) {
-      setError('Құпиясөз кемінде 6 таңбадан тұруы керек');
+      setError(t('register.errorLength'));
       return;
     }
     setLoading(true);
@@ -31,7 +33,7 @@ export default function Register() {
       await register(form.email, form.password, form.full_name, form.group_name);
       navigate('/', { replace: true });
     } catch (err) {
-      setError(err.response?.data?.message || 'Тіркеу қатесі');
+      setError(err.response?.data?.message || t('register.error'));
     } finally {
       setLoading(false);
     }
@@ -42,7 +44,6 @@ export default function Register() {
       <div className="w-full max-w-4xl">
         <div className="glass-card overflow-hidden flex flex-col md:flex-row">
 
-          {/* Сол жақ — декоративтік сурет */}
           <div className="relative hidden md:flex md:w-5/12 items-end justify-start p-8 overflow-hidden">
             <img
               src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=800&q=80&auto=format&fit=crop"
@@ -64,16 +65,11 @@ export default function Register() {
               <div className="text-3xl font-bold text-white mb-2">
                 Achiev<span style={{ color: '#c4b5fd' }}>ly</span>
               </div>
-              <p className="text-white/70 text-sm leading-relaxed">
-                Жетістіктеріңізді бөлісіп, топтастаңыз
-              </p>
+              <p className="text-white/70 text-sm leading-relaxed">{t('register.slogan')}</p>
             </div>
           </div>
 
-          {/* Оң жақ — форма */}
           <div className="flex-1 p-8 md:p-10">
-
-            {/* Мобильде logo */}
             <div className="flex items-center gap-3 mb-7">
               <div
                 className="w-10 h-10 rounded-2xl flex items-center justify-center md:hidden"
@@ -86,7 +82,7 @@ export default function Register() {
                   <span className="text-theme">Achiev</span>
                   <span style={{ color: '#818cf8' }}>ly</span>
                 </div>
-                <p className="text-sm text-muted">Жаңа аккаунт жасаңыз</p>
+                <p className="text-sm text-muted">{t('register.subtitle')}</p>
               </div>
             </div>
 
@@ -95,7 +91,7 @@ export default function Register() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-theme">Аты-жөні *</label>
+                  <label className="text-sm font-medium text-theme">{t('register.fullName')} *</label>
                   <input
                     type="text"
                     value={form.full_name}
@@ -103,17 +99,17 @@ export default function Register() {
                     required
                     minLength={3}
                     className="glass-input"
-                    placeholder="Аты-жөніңіз"
+                    placeholder={t('register.fullName')}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-theme">Топ</label>
+                  <label className="text-sm font-medium text-theme">{t('register.group')}</label>
                   <input
                     type="text"
                     value={form.group_name}
                     onChange={update('group_name')}
                     className="glass-input"
-                    placeholder="Топ атауы"
+                    placeholder={t('register.groupPlaceholder')}
                   />
                 </div>
               </div>
@@ -132,7 +128,7 @@ export default function Register() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-theme">Құпиясөз *</label>
+                  <label className="text-sm font-medium text-theme">{t('register.password')} *</label>
                   <input
                     type="password"
                     value={form.password}
@@ -140,11 +136,11 @@ export default function Register() {
                     required
                     minLength={6}
                     className="glass-input"
-                    placeholder="Кемінде 6 таңба"
+                    placeholder={t('settings.passwordMinLength')}
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-theme">Қайталаңыз *</label>
+                  <label className="text-sm font-medium text-theme">{t('register.confirmPassword')} *</label>
                   <input
                     type="password"
                     value={form.confirmPassword}
@@ -162,13 +158,13 @@ export default function Register() {
                 disabled={loading}
                 className="btn-primary w-full py-3 mt-1"
               >
-                {loading ? 'Тіркелуде...' : 'Тіркелу'}
+                {loading ? t('register.loading') : t('register.submit')}
               </button>
 
               <p className="text-center text-sm text-muted pt-1">
-                Аккаунт бар ма?{' '}
+                {t('register.hasAccount')}{' '}
                 <Link to="/login" className="text-accent font-medium hover:underline">
-                  Кіру
+                  {t('nav.login')}
                 </Link>
               </p>
             </div>

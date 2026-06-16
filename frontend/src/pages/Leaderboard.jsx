@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { CategoryBadgeIcon } from '../components/CategoryIcon';
 
@@ -24,6 +25,7 @@ export default function Leaderboard() {
   const [loading, setLoading] = useState(true);
   const [groups, setGroups] = useState([]);
   const [groupFilter, setGroupFilter] = useState('');
+  const { t } = useTranslation();
 
   const load = async (group = '') => {
     setLoading(true);
@@ -61,10 +63,8 @@ export default function Leaderboard() {
   return (
     <div className="max-w-3xl mx-auto px-5 py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-theme">🏆 Рейтинг кестесі</h1>
-        <p className="text-muted text-sm mt-1">
-          Бекітілген жетістіктер санына қарай үздік студенттер
-        </p>
+        <h1 className="text-2xl font-bold text-theme">🏆 {t('leaderboard.title')}</h1>
+        <p className="text-muted text-sm mt-1">{t('leaderboard.subtitle')}</p>
       </div>
 
       {/* Топ сүзгісі */}
@@ -76,7 +76,7 @@ export default function Leaderboard() {
               groupFilter === '' ? 'btn-primary' : 'btn-glass'
             }`}
           >
-            Барлық топтар
+            {t('leaderboard.allGroups')}
           </button>
           {groups.map((g) => (
             <button
@@ -93,11 +93,11 @@ export default function Leaderboard() {
       )}
 
       {loading ? (
-        <div className="text-center text-muted py-16">Жүктелуде...</div>
+        <div className="text-center text-muted py-16">{t('common.loading')}</div>
       ) : students.length === 0 ? (
         <div className="glass-panel text-center py-14">
           <div className="text-4xl mb-3">📊</div>
-          <p className="text-muted text-sm">Деректер жоқ</p>
+          <p className="text-muted text-sm">{t('leaderboard.noData')}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -153,7 +153,7 @@ export default function Leaderboard() {
                   >
                     {s.total}
                   </div>
-                  <div className="text-[10px] text-muted">жетістік</div>
+                  <div className="text-[10px] text-muted">{t('leaderboard.unit')}</div>
                 </div>
               </div>
             </Link>
@@ -163,7 +163,7 @@ export default function Leaderboard() {
 
       <div className="mt-8 text-center">
         <Link to="/" className="text-accent text-sm hover:underline">
-          ← Жаңалықтарға оралу
+          {t('leaderboard.backToFeed')}
         </Link>
       </div>
     </div>
