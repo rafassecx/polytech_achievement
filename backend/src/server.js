@@ -228,15 +228,25 @@ async function startPolling() {
 
 app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
-  try {
-    const migPath = path.join(__dirname, '..', 'add_social_features.sql');
-    if (fs.existsSync(migPath)) {
-      const sql = fs.readFileSync(migPath, 'utf8');
-      await pool.query(sql);
-      console.log('Migration: social tables OK');
+
+  const migrations = [
+    'init.sql',
+    'add_messages_table.sql',
+    'add_group_reads.sql',
+    'add_social_features.sql',
+  ];
+
+  for (const file of migrations) {
+    try {
+      const migPath = path.join(__dirname, '..', file);
+      if (fs.existsSync(migPath)) {
+        const sql = fs.readFileSync(migPath, 'utf8');
+        await pool.query(sql);
+        console.log(`Migration OK: ${file}`);
+      }
+    } catch (e) {
+      console.log(`Migration note (${file}):`, e.message);
     }
-  } catch (e) {
-    console.log('Migration note:', e.message);
   }
 
   startPolling();
