@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  CheckCircle2, GraduationCap, CalendarDays, Heart, MessageCircle,
+  CheckCircle2, CalendarDays, Heart, MessageCircle,
   Trophy, ChevronRight, Flame, Plus, BookOpen, Dumbbell, Star,
   Palette, Handshake, Award,
 } from 'lucide-react';
@@ -179,12 +179,6 @@ export default function Home() {
         <div className="relative z-10 px-5 py-8 sm:px-8 sm:py-12 flex flex-col md:flex-row items-center gap-8">
 
           <div className="flex-1 text-center md:text-left">
-            <div
-              className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4 mx-auto md:mx-0"
-              style={{ background: 'rgba(245,158,11,0.18)', backdropFilter: 'blur(10px)' }}
-            >
-              <GraduationCap size={28} style={{ color: '#f59e0b' }} strokeWidth={1.5} />
-            </div>
             <h1 className="text-3xl md:text-4xl font-bold text-theme mb-2 leading-tight">
               {t('home.heroTitle')}
             </h1>
