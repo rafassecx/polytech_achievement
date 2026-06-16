@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   CheckCircle2, CalendarDays, Heart, MessageCircle,
   Trophy, ChevronRight, Flame, Plus, BookOpen, Dumbbell, Star,
-  Palette, Handshake, Award,
+  Palette, Handshake, Award, Users,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
@@ -294,7 +294,7 @@ export default function Home() {
             label={t('home.totalAchievements')}
           />
           <StatCard
-            Icon={GraduationCap}
+            Icon={Users}
             iconColor="#6366f1"
             iconBg="rgba(99,102,241,0.12)"
             value={stats.total_students}
