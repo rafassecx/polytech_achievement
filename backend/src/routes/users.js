@@ -382,6 +382,24 @@ router.patch('/:id/role', authMiddleware, checkRole('admin'), async (req, res) =
   }
 });
 
+router.delete('/:id', authMiddleware, checkRole('admin'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (parseInt(id) === req.user.id) {
+      return res.status(400).json({ message: 'Өзіңізді жоя алмайсыз' });
+    }
+    const result = await pool.query(
+      `DELETE FROM users WHERE id = $1 RETURNING id, full_name`,
+      [id]
+    );
+    if (result.rows.length === 0) return res.status(404).json({ message: 'Пайдаланушы табылмады' });
+    res.json({ message: `${result.rows[0].full_name} жойылды` });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Қате' });
+  }
+});
+
 router.patch('/:id/toggle-active', authMiddleware, checkRole('admin'), async (req, res) => {
   try {
     const { id } = req.params;

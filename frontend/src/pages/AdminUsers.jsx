@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Send as TelegramIcon } from 'lucide-react';
+import { Send as TelegramIcon, Trash2 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
@@ -58,6 +58,17 @@ export default function AdminUsers() {
     } catch (err) {
       await showAlert(err.response?.data?.message || t('admin.error'));
       load();
+    }
+  };
+
+  const deleteUser = async (id, name) => {
+    const ok = await showConfirm(t('admin.confirmDelete', { name }), { danger: true });
+    if (!ok) return;
+    try {
+      await api.delete(`/users/${id}`);
+      setUsers(users.filter((u) => u.id !== id));
+    } catch (err) {
+      await showAlert(err.response?.data?.message || t('admin.error'));
     }
   };
 
@@ -183,6 +194,14 @@ export default function AdminUsers() {
                               }
                             >
                               {u.is_active ? t('admin.block') : t('admin.unblock')}
+                            </button>
+                            <button
+                              onClick={() => deleteUser(u.id, u.full_name)}
+                              className="btn-glass p-1.5"
+                              style={{ color: '#dc2626', borderColor: 'rgba(220,38,38,0.3)' }}
+                              title={t('admin.delete')}
+                            >
+                              <Trash2 size={13} />
                             </button>
                           </div>
                         )}

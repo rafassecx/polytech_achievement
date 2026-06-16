@@ -48,6 +48,8 @@ const kk = {
     block: 'Блок', unblock: 'Жаю',
     confirmRole: '«{{name}}» пайдаланушысының рөлін «{{role}}» етіп өзгертесіз бе?',
     confirmBlock: '«{{name}}» — блоктау?', confirmUnblock: '«{{name}}» — белсендіру?',
+    confirmDelete: '«{{name}}» пайдаланушысын толығымен жою керек пе? Барлық деректері де жойылады.',
+    delete: 'Жою',
     error: 'Қате орын алды',
   },
   chat: {
@@ -201,6 +203,8 @@ const ru = {
     block: 'Блок', unblock: 'Снять',
     confirmRole: 'Изменить роль «{{name}}» на «{{role}}»?',
     confirmBlock: '«{{name}}» — заблокировать?', confirmUnblock: '«{{name}}» — активировать?',
+    confirmDelete: 'Удалить пользователя «{{name}}»? Все его данные будут удалены безвозвратно.',
+    delete: 'Удалить',
     error: 'Произошла ошибка',
   },
   chat: {
