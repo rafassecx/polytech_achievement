@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import {
   CheckCircle2, CalendarDays, Heart, MessageCircle,
   Trophy, ChevronRight, Flame, Plus, BookOpen, Dumbbell, Star,
-  Palette, Handshake, Award, Users,
+  Palette, Handshake, Award, GraduationCap,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
@@ -252,7 +252,7 @@ export default function Home() {
                 background: 'rgba(16,185,129,0.13)', backdropFilter: 'blur(12px)',
                 border: '1px solid rgba(16,185,129,0.24)',
                 animation: 'orbFloat 8s ease-in-out infinite alternate', '--ty': '9px', animationDelay: '-4s' }}>
-              <Award size={18} style={{ color: '#34d399' }} />
+              <GraduationCap size={18} style={{ color: '#34d399' }} />
             </div>
 
             <div className="absolute z-10 flex items-center justify-center rounded-2xl"
@@ -294,7 +294,7 @@ export default function Home() {
             label={t('home.totalAchievements')}
           />
           <StatCard
-            Icon={Users}
+            Icon={GraduationCap}
             iconColor="#6366f1"
             iconBg="rgba(99,102,241,0.12)"
             value={stats.total_students}
