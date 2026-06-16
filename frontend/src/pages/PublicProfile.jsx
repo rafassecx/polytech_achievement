@@ -4,13 +4,11 @@ import {
   UserPlus, UserCheck, Clock, Link2, Check,
   Award, Users, Heart, MessageCircle, ArrowLeft, MessageSquare, X,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useModal } from '../contexts/ModalContext';
-import { CATEGORY_LABELS } from '../lib/constants';
 import { CategoryBadgeIcon, CategoryCardIcon } from '../components/CategoryIcon';
-
-const ROLE_LABELS = { student: 'Студент', curator: 'Куратор', admin: 'Admin' };
 
 function ProfileAvatar({ name, src }) {
   if (src) {
@@ -40,25 +38,24 @@ function SmallAvatar({ name, src }) {
   );
 }
 
-// Кнопка дружбы — без hover-флика: pending_sent показывает Clock + отдельный X
 function FriendButton({ status, direction, friendshipId, onAction, loading }) {
+  const { t } = useTranslation();
+
   if (status === 'none') return (
     <button onClick={() => onAction('request')} disabled={loading}
       className="btn-primary px-4 py-2 rounded-xl text-sm flex items-center gap-1.5">
-      <UserPlus size={14} /> Достыққа қосу
+      <UserPlus size={14} /> {t('profile.myFriends').replace('ым', '')}
     </button>
   );
 
   if (status === 'pending' && direction === 'sent') return (
     <div className="flex items-center gap-1.5">
-      <span className="btn-glass px-3 py-2 text-sm flex items-center gap-1.5 cursor-default"
-        style={{ opacity: 0.85 }}>
-        <Clock size={14} /> Сұрау жіберілді
+      <span className="btn-glass px-3 py-2 text-sm flex items-center gap-1.5 cursor-default" style={{ opacity: 0.85 }}>
+        <Clock size={14} /> {t('friends.requestSent')}
       </span>
       <button
         onClick={() => onAction('cancel', friendshipId)}
         disabled={loading}
-        title="Сұрауды бас тарту"
         className="btn-glass px-2.5 py-2 text-sm flex items-center justify-center smooth hover:bg-red-500/15"
         style={{ color: 'var(--clr-danger)', borderColor: 'rgba(239,68,68,0.3)' }}
       >
@@ -72,7 +69,7 @@ function FriendButton({ status, direction, friendshipId, onAction, loading }) {
       <button onClick={() => onAction('accept', friendshipId)} disabled={loading}
         className="btn-primary px-4 py-2 rounded-xl text-sm flex items-center gap-1.5"
         style={{ background: '#059669', boxShadow: '0 4px 14px rgba(5,150,105,0.3)' }}>
-        <UserCheck size={14} /> Қабылдау
+        <UserCheck size={14} /> {t('friends.accept')}
       </button>
       <button onClick={() => onAction('reject', friendshipId)} disabled={loading}
         className="btn-glass px-3 py-2 text-sm" style={{ color: 'var(--clr-danger)' }}>
@@ -85,7 +82,7 @@ function FriendButton({ status, direction, friendshipId, onAction, loading }) {
     <button onClick={() => onAction('unfriend')} disabled={loading}
       className="btn-glass px-4 py-2 text-sm flex items-center gap-1.5"
       style={{ color: 'var(--clr-success)', borderColor: 'rgba(16,185,129,0.35)' }}>
-      <UserCheck size={14} /> Дос
+      <UserCheck size={14} /> {t('profile.myFriends').replace('ым', '')}
     </button>
   );
 
@@ -96,6 +93,7 @@ export default function PublicProfile() {
   const { id } = useParams();
   const { user: me } = useAuth();
   const { showConfirm } = useModal();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [profile, setProfile] = useState(null);
@@ -108,6 +106,20 @@ export default function PublicProfile() {
   const [copied, setCopied] = useState(false);
 
   const isOwnProfile = me && String(me.id) === String(id);
+
+  const catLabels = {
+    academic: t('achievements.category.academic'),
+    sport: t('achievements.category.sport'),
+    cultural: t('achievements.category.cultural'),
+    social: t('achievements.category.social'),
+    other: t('achievements.category.other'),
+  };
+
+  const roleLabels = {
+    student: t('profile.roles.student'),
+    curator: t('profile.roles.curator'),
+    admin: t('profile.roles.admin'),
+  };
 
   const loadProfile = useCallback(async () => {
     try {
@@ -163,7 +175,7 @@ export default function PublicProfile() {
         await api.patch(`/friends/request/${friendshipId}/reject`);
         setFriendStatus({ status: 'none' });
       } else if (action === 'unfriend') {
-        const ok = await showConfirm(`«${profile?.full_name}» достықтан шығаруды растайсыз ба?`, { danger: true });
+        const ok = await showConfirm(t('friends.unfriendConfirm', { name: profile?.full_name }), { danger: true });
         if (!ok) { setFriendLoading(false); return; }
         await api.delete(`/friends/${id}`);
         setFriendStatus({ status: 'none' });
@@ -187,30 +199,28 @@ export default function PublicProfile() {
     });
   };
 
-  if (loading) return <div className="text-center text-muted py-20">Жүктелуде...</div>;
+  if (loading) return <div className="text-center text-muted py-20">{t('common.loading')}</div>;
   if (!profile) return (
     <div className="max-w-xl mx-auto px-5 py-20 text-center">
-      <h1 className="text-xl font-bold text-theme mb-3">Пайдаланушы табылмады</h1>
-      <Link to="/" className="text-accent hover:underline">Басты бетке</Link>
+      <h1 className="text-xl font-bold text-theme mb-3">{t('friends.userNotFound')}</h1>
+      <Link to="/" className="text-accent hover:underline">{t('leaderboard.backToFeed')}</Link>
     </div>
   );
 
   return (
     <div className="max-w-3xl mx-auto px-5 py-8">
       <Link to="/" className="text-muted hover:text-theme text-sm inline-flex items-center gap-1.5 mb-5 smooth">
-        <ArrowLeft size={14} /> Артқа
+        <ArrowLeft size={14} /> {t('common.back')}
       </Link>
 
-      {/* ── Профиль картасы ── */}
       <div className="glass-card p-6 mb-6">
 
-        {/* Аватар + аты */}
         <div className="flex items-center gap-4 mb-4">
           <ProfileAvatar name={profile.full_name} src={profile.avatar_url} />
           <div className="min-w-0">
             <h1 className="text-xl font-bold text-theme leading-tight">{profile.full_name}</h1>
             <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-              <span className="badge">{ROLE_LABELS[profile.role] || profile.role}</span>
+              <span className="badge">{roleLabels[profile.role] || profile.role}</span>
               {profile.group_name && (
                 <Link
                   to={`/groups/${encodeURIComponent(profile.group_name)}`}
@@ -223,17 +233,15 @@ export default function PublicProfile() {
           </div>
         </div>
 
-        {/* Био */}
         {profile.bio && (
           <p className="text-sm text-muted mb-4 leading-relaxed">{profile.bio}</p>
         )}
 
-        {/* Статистика */}
         <div className="flex items-center gap-5 mb-4">
           <div className="flex items-center gap-1.5 text-sm">
             <Award size={14} className="text-accent" />
             <span className="font-semibold text-theme">{profile.achievements_count}</span>
-            <span className="text-muted">жетістік</span>
+            <span className="text-muted">{t('leaderboard.unit')}</span>
           </div>
           <button
             onClick={() => setFriendsOpen(!friendsOpen)}
@@ -241,15 +249,14 @@ export default function PublicProfile() {
           >
             <Users size={14} className="text-accent" />
             <span className="font-semibold text-theme">{profile.friends_count || 0}</span>
-            <span className="text-muted">дос</span>
+            <span className="text-muted">{t('profile.myFriends')}</span>
           </button>
         </div>
 
-        {/* Кнопки действий */}
         <div className="flex flex-wrap gap-2">
           {isOwnProfile ? (
             <Link to="/profile" className="btn-glass px-4 py-2 text-sm flex items-center gap-1.5">
-              Профильді өзгерту
+              {t('profile.editBtn')}
             </Link>
           ) : me ? (
             <>
@@ -262,7 +269,7 @@ export default function PublicProfile() {
               />
               <button onClick={openChat}
                 className="btn-glass px-4 py-2 text-sm flex items-center gap-1.5">
-                <MessageSquare size={14} /> Хабарлама
+                <MessageSquare size={14} /> {t('chat.newChat')}
               </button>
             </>
           ) : null}
@@ -272,16 +279,15 @@ export default function PublicProfile() {
             className="btn-glass px-4 py-2 text-sm flex items-center gap-1.5 smooth"
             style={copied ? { color: 'var(--clr-success)', borderColor: 'rgba(16,185,129,0.35)' } : {}}
           >
-            {copied ? <><Check size={14} /> Көшірілді</> : <><Link2 size={14} /> Бөлісу</>}
+            {copied ? <><Check size={14} /> {t('profile.copied')}</> : <><Link2 size={14} /> {t('profile.share')}</>}
           </button>
         </div>
 
-        {/* Список друзей */}
         {friendsOpen && (
           <div className="mt-5 pt-4 border-t border-white/10">
-            <p className="text-sm font-semibold text-theme mb-3">Достар ({friends.length})</p>
+            <p className="text-sm font-semibold text-theme mb-3">{t('profile.myFriends')} ({friends.length})</p>
             {friends.length === 0 ? (
-              <p className="text-sm text-muted">Достар жоқ</p>
+              <p className="text-sm text-muted">{t('profile.noFriends')}</p>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {friends.map((f) => (
@@ -300,14 +306,13 @@ export default function PublicProfile() {
         )}
       </div>
 
-      {/* Жетістіктер торы */}
       <h2 className="text-base font-semibold text-theme mb-4">
-        Жетістіктер ({achievements.length})
+        {t('achievements.title')} ({achievements.length})
       </h2>
 
       {achievements.length === 0 ? (
         <div className="glass-panel text-center py-14 text-muted text-sm">
-          Расталған жетістіктер жоқ
+          {t('home.noAchievementsFilter')}
         </div>
       ) : (
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -322,7 +327,7 @@ export default function PublicProfile() {
                 <div className="p-4 flex flex-col flex-1">
                   <div className="badge mb-2 flex items-center gap-1.5 w-fit">
                     <CategoryBadgeIcon category={a.category} size={11} />
-                    {CATEGORY_LABELS[a.category] || a.category}
+                    {catLabels[a.category] || a.category}
                   </div>
                   <h3 className="font-semibold text-theme text-sm leading-snug line-clamp-2 group-hover:text-accent smooth">
                     {a.title}

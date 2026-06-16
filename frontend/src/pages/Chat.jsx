@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { SquarePen, Users, MessageSquare, SendHorizontal, X, Check, CheckCheck, Trash2 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useModal } from '../contexts/ModalContext';
@@ -8,17 +9,6 @@ import { useModal } from '../contexts/ModalContext';
 function formatTime(dateStr) {
   const d = new Date(dateStr);
   return d.toLocaleTimeString('kk-KZ', { hour: '2-digit', minute: '2-digit' });
-}
-
-function formatDate(dateStr) {
-  const d = new Date(dateStr);
-  const today = new Date();
-  const yesterday = new Date(today);
-  yesterday.setDate(today.getDate() - 1);
-
-  if (d.toDateString() === today.toDateString()) return 'Бүгін';
-  if (d.toDateString() === yesterday.toDateString()) return 'Кеше';
-  return d.toLocaleDateString('kk-KZ');
 }
 
 function Avatar({ name, src, size = 10 }) {
@@ -66,7 +56,6 @@ function ConvItem({ active, onClick, onDelete, avatar, name, sub, unread, lastMs
               onClick={(e) => { e.stopPropagation(); onDelete(); }}
               className="hidden group-hover:flex items-center justify-center w-6 h-6 rounded-lg smooth opacity-0 group-hover:opacity-100 hover:text-red-400 shrink-0"
               style={{ color: 'var(--clr-muted)' }}
-              title="Чатты жою"
             >
               <Trash2 size={13} />
             </button>
@@ -84,6 +73,7 @@ function ConvItem({ active, onClick, onDelete, avatar, name, sub, unread, lastMs
 export default function Chat() {
   const { user } = useAuth();
   const { showConfirm } = useModal();
+  const { t } = useTranslation();
   const location = useLocation();
 
   const [activeChat, setActiveChat] = useState(null);
@@ -105,6 +95,16 @@ export default function Chat() {
   const inputRef = useRef(null);
   const chatBodyRef = useRef(null);
   const isNearBottom = useRef(true);
+
+  const formatDate = (dateStr) => {
+    const d = new Date(dateStr);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(today.getDate() - 1);
+    if (d.toDateString() === today.toDateString()) return t('chat.today');
+    if (d.toDateString() === yesterday.toDateString()) return t('chat.yesterday');
+    return d.toLocaleDateString('kk-KZ');
+  };
 
   const loadConversations = useCallback(async () => {
     try {
@@ -169,13 +169,13 @@ export default function Chat() {
 
   useEffect(() => {
     if (!searchQuery.trim()) { setSearchResults([]); return; }
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       try {
         const { data } = await api.get(`/messages/users?search=${encodeURIComponent(searchQuery)}`);
         setSearchResults(data.users);
       } catch { /* тыныш */ }
     }, 300);
-    return () => clearTimeout(t);
+    return () => clearTimeout(timer);
   }, [searchQuery]);
 
   const openDirectChat = (u) => {
@@ -186,12 +186,12 @@ export default function Chat() {
   };
 
   const openGroupChat = (groupName) => {
-    setActiveChat({ type: 'group', id: groupName, name: `${groupName} тобы`, groupName });
+    setActiveChat({ type: 'group', id: groupName, name: `${groupName} ${t('chat.groupSuffix')}`, groupName });
     setMobileSidebar(false);
   };
 
   const deleteConversation = async (userId) => {
-    const ok = await showConfirm('Чатты толығымен жоясыз ба? Барлық хабарламалар өшіріледі.', { danger: true });
+    const ok = await showConfirm(t('chat.deleteConvConfirm'), { danger: true });
     if (!ok) return;
     try {
       await api.delete(`/messages/conversation/${userId}`);
@@ -233,7 +233,7 @@ export default function Chat() {
       await loadConversations();
     } catch (err) {
       setInput(text);
-      setSendError(err.response?.data?.message || 'Жіберу қатесі');
+      setSendError(err.response?.data?.message || t('chat.sendError'));
     } finally {
       setSending(false);
       inputRef.current?.focus();
@@ -272,7 +272,7 @@ export default function Chat() {
                     disabled={deletingMsgId === m.id}
                     className="opacity-0 group-hover/msg:opacity-100 smooth flex items-center justify-center w-6 h-6 rounded-lg hover:text-red-400 shrink-0 mb-0.5"
                     style={{ color: 'var(--clr-muted)' }}
-                    title="Жою"
+                    title={t('chat.deleteTitle')}
                   >
                     {deletingMsgId === m.id
                       ? <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
@@ -337,11 +337,11 @@ export default function Chat() {
         <div className={`glass-panel flex flex-col overflow-hidden w-full md:w-72 md:shrink-0 md:flex ${mobileSidebar ? 'flex' : 'hidden'}`}>
           <div className="px-4 py-4 border-b border-white/10">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-base font-bold text-theme">Чаттар</h2>
+              <h2 className="text-base font-bold text-theme">{t('chat.title')}</h2>
               <button
                 onClick={() => setShowSearch(!showSearch)}
                 className="btn-glass px-2.5 py-2 leading-none flex items-center justify-center"
-                title="Жаңа хат"
+                title={t('chat.newChat')}
               >
                 <SquarePen size={16} />
               </button>
@@ -353,7 +353,7 @@ export default function Chat() {
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Пайдаланушы іздеу..."
+                  placeholder={t('chat.search')}
                   className="glass-input text-sm py-2"
                   autoFocus
                 />
@@ -384,7 +384,7 @@ export default function Chat() {
                 active={activeChat?.type === 'group' && activeChat.groupName === user.group_name}
                 onClick={() => openGroupChat(user.group_name)}
                 name={user.group_name}
-                sub="Топтық чат"
+                sub={t('chat.groupChat')}
                 unread={0}
               />
             )}
@@ -394,8 +394,11 @@ export default function Chat() {
                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: 'rgba(99,102,241,0.1)' }}>
                   <MessageSquare size={22} className="text-accent" />
                 </div>
-                <p className="text-xs leading-relaxed">Хабарламалар жоқ.<br/>
-                  <button onClick={() => setShowSearch(true)} className="text-accent hover:underline">Жаңа чат бастаңыз</button>
+                <p className="text-xs leading-relaxed">
+                  {t('chat.noChats')}<br />
+                  <button onClick={() => setShowSearch(true)} className="text-accent hover:underline">
+                    {t('chat.startNewChat')}
+                  </button>
                 </p>
               </div>
             ) : (
@@ -446,17 +449,17 @@ export default function Chat() {
                     </Link>
                   )}
                   <div className="text-xs text-muted">
-                    {activeChat.type === 'group' ? 'Топтық чат' : 'Жеке хат'}
+                    {activeChat.type === 'group' ? t('chat.groupChat') : t('chat.privateChat')}
                   </div>
                 </div>
               </div>
 
               <div ref={chatBodyRef} onScroll={handleChatScroll} className="flex-1 overflow-y-auto px-4 py-4">
                 {loadingMsgs ? (
-                  <div className="text-center text-muted text-sm py-10">Жүктелуде...</div>
+                  <div className="text-center text-muted text-sm py-10">{t('chat.loading')}</div>
                 ) : messages.length === 0 ? (
                   <div className="text-center text-muted text-sm py-10">
-                    Хабарламалар жоқ. Алғашқы хабарламаңызды жіберіңіз!
+                    {t('chat.noMessages')}
                   </div>
                 ) : (
                   renderMessages()
@@ -482,7 +485,7 @@ export default function Chat() {
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Хабарлама жазыңыз..."
+                  placeholder={t('chat.inputPlaceholder')}
                   className="glass-input flex-1 py-2.5 text-sm"
                   disabled={sending}
                   onKeyDown={(e) => {
@@ -518,8 +521,8 @@ export default function Chat() {
                 <line x1="66" y1="84" x2="88" y2="84" stroke="rgba(167,139,250,0.3)" strokeWidth="1.5" strokeLinecap="round" />
               </svg>
               <div>
-                <h3 className="text-base font-semibold text-theme mb-1">Чат таңдаңыз</h3>
-                <p className="text-sm text-muted">Сол жақтан диалог таңдаңыз немесе жаңа хат бастаңыз</p>
+                <h3 className="text-base font-semibold text-theme mb-1">{t('chat.selectChat')}</h3>
+                <p className="text-sm text-muted">{t('chat.selectChatHint')}</p>
               </div>
             </div>
           )}

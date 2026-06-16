@@ -1,23 +1,39 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Clock, CheckCircle, XCircle, Plus, Award, Send as TelegramIcon, MessageCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
-import { CATEGORY_LABELS, STATUS_LABELS, STATUS_GLASS } from '../lib/constants';
+import { STATUS_GLASS } from '../lib/constants';
 import { CategoryBadgeIcon, CategoryCardIcon } from '../components/CategoryIcon';
-
-const FILTERS = [
-  { value: 'all',      label: 'Барлығы', Icon: null },
-  { value: 'pending',  label: 'Модерацияда', Icon: Clock },
-  { value: 'approved', label: 'Бекітілген', Icon: CheckCircle },
-  { value: 'rejected', label: 'Бас тартылған', Icon: XCircle },
-];
 
 export default function MyAchievements() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [achievements, setAchievements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+
+  const FILTERS = [
+    { value: 'all',      label: t('home.all'), Icon: null },
+    { value: 'pending',  label: t('achievements.status.pending'), Icon: Clock },
+    { value: 'approved', label: t('achievements.status.approved'), Icon: CheckCircle },
+    { value: 'rejected', label: t('achievements.status.rejected'), Icon: XCircle },
+  ];
+
+  const catLabels = {
+    academic: t('achievements.category.academic'),
+    sport: t('achievements.category.sport'),
+    cultural: t('achievements.category.cultural'),
+    social: t('achievements.category.social'),
+    other: t('achievements.category.other'),
+  };
+
+  const statusLabels = {
+    pending: t('achievements.status.pending'),
+    approved: t('achievements.status.approved'),
+    rejected: t('achievements.status.rejected'),
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -33,15 +49,14 @@ export default function MyAchievements() {
     <div className="max-w-6xl mx-auto px-5 py-8">
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-theme">Менің жетістіктерім</h1>
-          <p className="text-muted text-sm mt-0.5">Барлығы: {achievements.length}</p>
+          <h1 className="text-2xl font-bold text-theme">{t('profile.myAchievements')}</h1>
+          <p className="text-muted text-sm mt-0.5">{t('admin.total', { count: achievements.length })}</p>
         </div>
         <Link to="/add" className="btn-primary px-5 py-2 rounded-2xl text-sm flex items-center gap-1.5">
-          <Plus size={15} /> Жетістік қосу
+          <Plus size={15} /> {t('achievements.add')}
         </Link>
       </div>
 
-      {/* Сүзгілер */}
       <div className="flex gap-2 mb-6 flex-wrap">
         {FILTERS.map(({ value, label, Icon }) => (
           <button
@@ -58,7 +73,7 @@ export default function MyAchievements() {
       </div>
 
       {loading ? (
-        <div className="text-center text-muted py-16">Жүктелуде...</div>
+        <div className="text-center text-muted py-16">{t('common.loading')}</div>
       ) : achievements.length === 0 ? (
         <div className="glass-panel text-center py-14">
           <div
@@ -67,9 +82,9 @@ export default function MyAchievements() {
           >
             <Award size={24} className="text-accent" />
           </div>
-          <p className="text-muted text-sm mb-4">Жетістіктер жоқ</p>
+          <p className="text-muted text-sm mb-4">{t('achievements.empty')}</p>
           <Link to="/add" className="text-accent font-medium hover:underline text-sm flex items-center gap-1.5 justify-center">
-            <Plus size={14} /> Бірінші жетістігіңізді қосыңыз
+            <Plus size={14} /> {t('profile.addFirst')}
           </Link>
         </div>
       ) : (
@@ -90,13 +105,13 @@ export default function MyAchievements() {
                     <div className="flex flex-wrap gap-2 mb-2">
                       <span className="badge flex items-center gap-1.5">
                         <CategoryBadgeIcon category={a.category} size={12} />
-                        {CATEGORY_LABELS[a.category] || a.category}
+                        {catLabels[a.category] || a.category}
                       </span>
                       <span
                         className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
                         style={{ background: sg.background, border: `1px solid ${sg.border}`, color: sg.color }}
                       >
-                        {STATUS_LABELS[a.status] || a.status}
+                        {statusLabels[a.status] || a.status}
                       </span>
                       {a.source === 'telegram' && (
                         <span className="badge flex items-center gap-1">

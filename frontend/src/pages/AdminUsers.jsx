@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Send as TelegramIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useModal } from '../contexts/ModalContext';
-
-const ROLE_LABELS = { student: 'Студент', curator: 'Куратор', admin: 'Admin' };
 
 const ROLE_STYLE = {
   student: { background: 'rgba(99,102,241,0.12)',  border: 'rgba(99,102,241,0.3)',  color: '#4338ca' },
@@ -15,15 +14,22 @@ const ROLE_STYLE = {
 export default function AdminUsers() {
   const { user: me } = useAuth();
   const { showAlert, showConfirm } = useModal();
+  const { t } = useTranslation();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [roleFilter, setRoleFilter] = useState('');
   const [searchInput, setSearchInput] = useState('');
   const [search, setSearch] = useState('');
 
+  const ROLE_LABELS = {
+    student: t('profile.roles.student'),
+    curator: t('profile.roles.curator'),
+    admin: t('profile.roles.admin'),
+  };
+
   useEffect(() => {
-    const t = setTimeout(() => setSearch(searchInput), 300);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setSearch(searchInput), 300);
+    return () => clearTimeout(timer);
   }, [searchInput]);
 
   const load = async () => {
@@ -44,43 +50,42 @@ export default function AdminUsers() {
   useEffect(() => { load(); }, [roleFilter, search]);
 
   const changeRole = async (id, newRole, name) => {
-    const ok = await showConfirm(`«${name}» пайдаланушысының рөлін «${ROLE_LABELS[newRole]}» етіп өзгертесіз бе?`);
+    const ok = await showConfirm(t('admin.confirmRole', { name, role: ROLE_LABELS[newRole] }));
     if (!ok) { load(); return; }
     try {
       await api.patch(`/users/${id}/role`, { role: newRole });
       setUsers(users.map((u) => u.id === id ? { ...u, role: newRole } : u));
     } catch (err) {
-      await showAlert(err.response?.data?.message || 'Қате орын алды');
+      await showAlert(err.response?.data?.message || t('admin.error'));
       load();
     }
   };
 
   const toggleActive = async (id, isActive, name) => {
-    const action = isActive ? 'блоктау' : 'белсендіру';
-    const ok = await showConfirm(`«${name}» — ${action}?`, { danger: isActive });
+    const msg = isActive ? t('admin.confirmBlock', { name }) : t('admin.confirmUnblock', { name });
+    const ok = await showConfirm(msg, { danger: isActive });
     if (!ok) return;
     try {
       const { data } = await api.patch(`/users/${id}/toggle-active`);
       setUsers(users.map((u) => u.id === id ? { ...u, is_active: data.user.is_active } : u));
     } catch (err) {
-      await showAlert(err.response?.data?.message || 'Қате орын алды');
+      await showAlert(err.response?.data?.message || t('admin.error'));
     }
   };
 
   return (
     <div className="max-w-6xl mx-auto px-5 py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-theme">Пайдаланушылар</h1>
-        <p className="text-muted text-sm mt-0.5">Барлығы: {users.length}</p>
+        <h1 className="text-2xl font-bold text-theme">{t('admin.title')}</h1>
+        <p className="text-muted text-sm mt-0.5">{t('admin.total', { count: users.length })}</p>
       </div>
 
-      {/* Іздеу + сүзгі */}
       <div className="glass-panel p-4 mb-6 flex gap-3 flex-wrap">
         <input
           type="text"
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
-          placeholder="Іздеу (аты-жөні немесе email)..."
+          placeholder={t('admin.searchPlaceholder')}
           className="glass-input flex-1 min-w-52"
         />
         <select
@@ -88,18 +93,18 @@ export default function AdminUsers() {
           onChange={(e) => setRoleFilter(e.target.value)}
           className="glass-input w-auto min-w-40"
         >
-          <option value="">Барлық рөлдер</option>
-          <option value="student">Студенттер</option>
-          <option value="curator">Кураторлар</option>
-          <option value="admin">Adminдер</option>
+          <option value="">{t('admin.allRoles')}</option>
+          <option value="student">{t('admin.students')}</option>
+          <option value="curator">{t('admin.curators')}</option>
+          <option value="admin">{t('admin.admins')}</option>
         </select>
       </div>
 
       {loading ? (
-        <div className="text-center text-muted py-16">Жүктелуде...</div>
+        <div className="text-center text-muted py-16">{t('common.loading')}</div>
       ) : users.length === 0 ? (
         <div className="glass-panel text-center py-14 text-muted">
-          Пайдаланушылар табылмады
+          {t('admin.noUsers')}
         </div>
       ) : (
         <div className="glass-panel overflow-hidden">
@@ -107,10 +112,10 @@ export default function AdminUsers() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-white/10 text-left">
-                  <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Пайдаланушы</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden md:table-cell">Email</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden sm:table-cell">Топ</th>
-                  <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">Рөл</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">{t('admin.colUser')}</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden md:table-cell">{t('admin.colEmail')}</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden sm:table-cell">{t('admin.colGroup')}</th>
+                  <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider">{t('admin.colRole')}</th>
                   <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider hidden lg:table-cell">Telegram</th>
                   <th className="px-4 py-3 text-xs font-semibold text-muted uppercase tracking-wider"></th>
                 </tr>
@@ -156,7 +161,7 @@ export default function AdminUsers() {
                       </td>
                       <td className="px-4 py-3 text-right">
                         {u.id === me.id ? (
-                          <span className="text-xs text-muted italic">Бұл сіз</span>
+                          <span className="text-xs text-muted italic">{t('admin.itsYou')}</span>
                         ) : (
                           <div className="flex gap-2 justify-end items-center">
                             <select
@@ -165,9 +170,9 @@ export default function AdminUsers() {
                               className="glass-input w-auto text-xs py-1 px-2"
                               style={{ borderRadius: 10, minWidth: 90 }}
                             >
-                              <option value="student">Студент</option>
-                              <option value="curator">Куратор</option>
-                              <option value="admin">Admin</option>
+                              <option value="student">{t('profile.roles.student')}</option>
+                              <option value="curator">{t('profile.roles.curator')}</option>
+                              <option value="admin">{t('profile.roles.admin')}</option>
                             </select>
                             <button
                               onClick={() => toggleActive(u.id, u.is_active, u.full_name)}
@@ -177,7 +182,7 @@ export default function AdminUsers() {
                                 : { color: '#059669', borderColor: 'rgba(5,150,105,0.3)' }
                               }
                             >
-                              {u.is_active ? 'Блок' : 'Жаю'}
+                              {u.is_active ? t('admin.block') : t('admin.unblock')}
                             </button>
                           </div>
                         )}

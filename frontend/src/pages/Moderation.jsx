@@ -1,17 +1,26 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, X, ArrowRight, PartyPopper, Send as TelegramIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
-import { CATEGORY_LABELS } from '../lib/constants';
 import { CategoryBadgeIcon, CategoryCardIcon } from '../components/CategoryIcon';
 import { useModal } from '../contexts/ModalContext';
 
 export default function Moderation() {
   const { showAlert, showPrompt } = useModal();
+  const { t } = useTranslation();
   const [achievements, setAchievements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [groupFilter, setGroupFilter] = useState('');
   const [moderatingId, setModeratingId] = useState(null);
+
+  const catLabels = {
+    academic: t('achievements.category.academic'),
+    sport: t('achievements.category.sport'),
+    cultural: t('achievements.category.cultural'),
+    social: t('achievements.category.social'),
+    other: t('achievements.category.other'),
+  };
 
   const load = async () => {
     setLoading(true);
@@ -30,9 +39,7 @@ export default function Moderation() {
   const moderate = async (id, status) => {
     let comment = null;
     if (status === 'rejected') {
-      comment = await showPrompt('Бас тарту себебін жазыңыз (міндетті емес):', {
-        placeholder: 'Себебі...',
-      });
+      comment = await showPrompt(t('moderation.rejectPrompt'), { placeholder: '...' });
       if (comment === null) return;
     }
     setModeratingId(id);
@@ -40,7 +47,7 @@ export default function Moderation() {
       await api.patch(`/achievements/${id}/moderate`, { status, moderator_comment: comment });
       setAchievements(achievements.filter((a) => a.id !== id));
     } catch (err) {
-      await showAlert(err.response?.data?.message || 'Қате орын алды');
+      await showAlert(err.response?.data?.message || t('moderation.error'));
     } finally {
       setModeratingId(null);
     }
@@ -52,11 +59,10 @@ export default function Moderation() {
   return (
     <div className="max-w-4xl mx-auto px-5 py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-theme">Модерация</h1>
-        <p className="text-muted text-sm mt-0.5">Растауды күтетін жетістіктер: {filtered.length}</p>
+        <h1 className="text-2xl font-bold text-theme">{t('moderation.title')}</h1>
+        <p className="text-muted text-sm mt-0.5">{t('moderation.pendingCount', { count: filtered.length })}</p>
       </div>
 
-      {/* Топ сүзгісі */}
       {groups.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-6">
           <button
@@ -65,7 +71,7 @@ export default function Moderation() {
               groupFilter === '' ? 'btn-primary' : 'btn-glass'
             }`}
           >
-            Барлық топтар
+            {t('moderation.allGroups')}
           </button>
           {groups.map((g) => (
             <button
@@ -82,7 +88,7 @@ export default function Moderation() {
       )}
 
       {loading ? (
-        <div className="text-center text-muted py-16">Жүктелуде...</div>
+        <div className="text-center text-muted py-16">{t('common.loading')}</div>
       ) : filtered.length === 0 ? (
         <div className="glass-card text-center py-16">
           <div
@@ -91,14 +97,13 @@ export default function Moderation() {
           >
             <PartyPopper size={28} style={{ color: '#059669' }} />
           </div>
-          <h2 className="text-xl font-bold text-theme mb-2">Барлығы өңделді!</h2>
-          <p className="text-muted text-sm">Растауды күтетін жетістіктер жоқ</p>
+          <h2 className="text-xl font-bold text-theme mb-2">{t('moderation.allDone')}</h2>
+          <p className="text-muted text-sm">{t('moderation.noPending')}</p>
         </div>
       ) : (
         <div className="space-y-4">
           {filtered.map((a) => (
             <div key={a.id} className="glass-card overflow-hidden flex flex-col md:flex-row">
-              {/* Суреті */}
               <div className="md:w-44 shrink-0">
                 {a.preview_image ? (
                   <img src={a.preview_image} alt="" className="w-full h-44 md:h-full object-cover" />
@@ -109,12 +114,11 @@ export default function Moderation() {
                 )}
               </div>
 
-              {/* Мазмұн */}
               <div className="flex-1 p-5 flex flex-col">
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="badge flex items-center gap-1.5">
                     <CategoryBadgeIcon category={a.category} size={12} />
-                    {CATEGORY_LABELS[a.category] || a.category}
+                    {catLabels[a.category] || a.category}
                   </span>
                   {a.source === 'telegram' && (
                     <span className="badge flex items-center gap-1">
@@ -151,7 +155,7 @@ export default function Moderation() {
                     className="btn-primary px-4 py-2 rounded-xl text-sm flex items-center gap-1.5"
                     style={{ background: '#059669', boxShadow: '0 4px 14px rgba(5,150,105,0.28)' }}
                   >
-                    <Check size={14} /> Бекіту
+                    <Check size={14} /> {t('moderation.approve')}
                   </button>
                   <button
                     onClick={() => moderate(a.id, 'rejected')}
@@ -159,13 +163,13 @@ export default function Moderation() {
                     className="btn-primary px-4 py-2 rounded-xl text-sm flex items-center gap-1.5"
                     style={{ background: '#dc2626', boxShadow: '0 4px 14px rgba(220,38,38,0.28)' }}
                   >
-                    <X size={14} /> Бас тарту
+                    <X size={14} /> {t('moderation.reject')}
                   </button>
                   <Link
                     to={`/achievements/${a.id}`}
                     className="text-sm text-accent hover:underline ml-auto flex items-center gap-1"
                   >
-                    Толық қарау <ArrowRight size={13} />
+                    {t('moderation.viewFull')} <ArrowRight size={13} />
                   </Link>
                 </div>
               </div>

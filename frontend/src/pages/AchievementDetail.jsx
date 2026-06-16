@@ -1,20 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Heart, Bookmark, Search, FileText, Check, X, Send as TelegramIcon, ZoomIn } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useModal } from '../contexts/ModalContext';
-import { CATEGORY_LABELS, STATUS_LABELS, STATUS_GLASS } from '../lib/constants';
+import { STATUS_GLASS } from '../lib/constants';
 import { CategoryBadgeIcon } from '../components/CategoryIcon';
 
 function StatusBadge({ status }) {
+  const { t } = useTranslation();
   const s = STATUS_GLASS[status] || {};
+  const statusLabels = {
+    pending: t('achievements.status.pending'),
+    approved: t('achievements.status.approved'),
+    rejected: t('achievements.status.rejected'),
+  };
   return (
     <span
       className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
       style={{ background: s.background, border: `1px solid ${s.border}`, color: s.color }}
     >
-      {STATUS_LABELS[status] || status}
+      {statusLabels[status] || status}
     </span>
   );
 }
@@ -23,6 +30,7 @@ export default function AchievementDetail() {
   const { id } = useParams();
   const { user } = useAuth();
   const { showAlert, showConfirm, showPrompt } = useModal();
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   const [achievement, setAchievement] = useState(null);
@@ -91,29 +99,27 @@ export default function AchievementDetail() {
       setComments([data.comment, ...comments]);
       setNewComment('');
     } catch (err) {
-      await showAlert(err.response?.data?.message || 'Қате орын алды');
+      await showAlert(err.response?.data?.message || t('common.error'));
     } finally {
       setSubmitting(false);
     }
   };
 
   const deleteComment = async (commentId) => {
-    const ok = await showConfirm('Пікірді жоюды растайсыз ба?', { danger: true });
+    const ok = await showConfirm(t('common.delete') + '?', { danger: true });
     if (!ok) return;
     try {
       await api.delete(`/comments/${commentId}`);
       setComments(comments.filter((c) => c.id !== commentId));
     } catch (err) {
-      await showAlert(err.response?.data?.message || 'Қате орын алды');
+      await showAlert(err.response?.data?.message || t('common.error'));
     }
   };
 
   const moderate = async (status) => {
     let comment = null;
     if (status === 'rejected') {
-      comment = await showPrompt('Бас тарту себебін жазыңыз (міндетті емес):', {
-        placeholder: 'Себебі...',
-      });
+      comment = await showPrompt(t('moderation.rejectPrompt'), { placeholder: '...' });
       if (comment === null) return;
     }
     setModerating(true);
@@ -121,25 +127,33 @@ export default function AchievementDetail() {
       await api.patch(`/achievements/${id}/moderate`, { status, moderator_comment: comment });
       await load();
     } catch (err) {
-      await showAlert(err.response?.data?.message || 'Қате орын алды');
+      await showAlert(err.response?.data?.message || t('common.error'));
     } finally {
       setModerating(false);
     }
   };
 
   const deleteAchievement = async () => {
-    const ok = await showConfirm('Жетістікті жоюды растайсыз ба? Бұл әрекетті болдырмауға болмайды.', { danger: true });
+    const ok = await showConfirm(t('common.delete') + '?', { danger: true });
     if (!ok) return;
     try {
       await api.delete(`/achievements/${id}`);
       navigate('/');
     } catch (err) {
-      await showAlert(err.response?.data?.message || 'Қате орын алды');
+      await showAlert(err.response?.data?.message || t('common.error'));
     }
   };
 
+  const catLabels = {
+    academic: t('achievements.category.academic'),
+    sport: t('achievements.category.sport'),
+    cultural: t('achievements.category.cultural'),
+    social: t('achievements.category.social'),
+    other: t('achievements.category.other'),
+  };
+
   if (loading) {
-    return <div className="text-center text-muted py-20">Жүктелуде...</div>;
+    return <div className="text-center text-muted py-20">{t('common.loading')}</div>;
   }
   if (!achievement) {
     return (
@@ -150,9 +164,9 @@ export default function AchievementDetail() {
         >
           <Search size={28} className="text-accent" />
         </div>
-        <h1 className="text-xl font-bold text-theme mb-3">Жетістік табылмады</h1>
+        <h1 className="text-xl font-bold text-theme mb-3">{t('achievements.notFound')}</h1>
         <Link to="/" className="text-accent hover:underline inline-flex items-center gap-1">
-          <ArrowLeft size={14} /> Басты бетке
+          <ArrowLeft size={14} /> {t('achievements.backHome')}
         </Link>
       </div>
     );
@@ -171,7 +185,7 @@ export default function AchievementDetail() {
   return (
     <div className="max-w-3xl mx-auto px-5 py-8">
       <Link to="/" className="text-muted hover:text-theme text-sm inline-flex items-center gap-1.5 mb-6 smooth">
-        <ArrowLeft size={14} /> Жаңалықтарға оралу
+        <ArrowLeft size={14} /> {t('achievements.backHome')}
       </Link>
 
       <article className="glass-card overflow-hidden">
@@ -180,7 +194,7 @@ export default function AchievementDetail() {
           <div className="flex flex-wrap items-center gap-2 mb-3">
             <span className="badge flex items-center gap-1.5">
               <CategoryBadgeIcon category={achievement.category} size={13} />
-              {CATEGORY_LABELS[achievement.category] || achievement.category}
+              {catLabels[achievement.category] || achievement.category}
             </span>
             <StatusBadge status={achievement.status} />
             {achievement.source === 'telegram' && (
@@ -213,7 +227,7 @@ export default function AchievementDetail() {
         {/* Суреттер — кастомды ашқыш */}
         {images.length > 0 && (
           <div className="px-7 py-5 border-t border-white/10">
-            <h3 className="text-sm font-semibold text-muted mb-3 uppercase tracking-wider">Фотолар</h3>
+            <h3 className="text-sm font-semibold text-muted mb-3 uppercase tracking-wider">{t('achievements.photos')}</h3>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {images.map((f) => (
                 <button
@@ -239,7 +253,7 @@ export default function AchievementDetail() {
         {/* Видео */}
         {videos.length > 0 && (
           <div className="px-7 py-5 border-t border-white/10">
-            <h3 className="text-sm font-semibold text-muted mb-3 uppercase tracking-wider">Видео</h3>
+            <h3 className="text-sm font-semibold text-muted mb-3 uppercase tracking-wider">{t('achievements.videos')}</h3>
             <div className="space-y-3">
               {videos.map((f) => (
                 <video key={f.id} src={f.file_url} controls className="w-full rounded-2xl" />
@@ -251,7 +265,7 @@ export default function AchievementDetail() {
         {/* Құжаттар */}
         {docs.length > 0 && (
           <div className="px-7 py-5 border-t border-white/10">
-            <h3 className="text-sm font-semibold text-muted mb-3 uppercase tracking-wider">Құжаттар</h3>
+            <h3 className="text-sm font-semibold text-muted mb-3 uppercase tracking-wider">{t('achievements.docs')}</h3>
             <div className="space-y-2">
               {docs.map((f) => (
                 <a
@@ -287,7 +301,7 @@ export default function AchievementDetail() {
               {user && achievement.status === 'approved' && (
                 <button
                   onClick={toggleBookmark}
-                  title={bookmarked ? 'Таңдаулылардан алып тастау' : 'Таңдаулыларға қосу'}
+                  title={bookmarked ? t('achievements.bookmarkRemove') : t('achievements.bookmarkAdd')}
                   className="btn-glass flex items-center gap-1.5 px-4 py-2 spring"
                   style={bookmarked ? { color: '#f59e0b', borderColor: 'rgba(245,158,11,0.4)' } : {}}
                 >
@@ -301,7 +315,7 @@ export default function AchievementDetail() {
                 className="text-xs px-3 py-1.5 rounded-xl smooth"
                 style={{ color: 'var(--clr-danger)' }}
               >
-                Жою
+                {t('common.delete')}
               </button>
             )}
           </div>
@@ -311,7 +325,7 @@ export default function AchievementDetail() {
         {isPending && isOwner && !canModerate && (
           <div className="px-7 py-4 border-t border-white/10">
             <div className="alert-warn" style={{ borderRadius: 14 }}>
-              Модерациядан жауапты күтіңіз
+              {t('achievements.pendingNotice')}
             </div>
           </div>
         )}
@@ -320,10 +334,10 @@ export default function AchievementDetail() {
         {isPending && canModerate && (
           <div className="px-7 py-5 border-t border-white/10" style={{ background: 'var(--warn-bg)' }}>
             <h3 className="text-sm font-semibold mb-2" style={{ color: 'var(--warn-text)' }}>
-              Растау керек
+              {t('achievements.moderateTitle')}
             </h3>
             <p className="text-xs mb-4" style={{ color: 'var(--warn-text)', opacity: 0.8 }}>
-              Бұл жетістік растауды күтеді.
+              {t('achievements.moderateDesc')}
             </p>
             <div className="flex gap-3">
               <button
@@ -332,7 +346,7 @@ export default function AchievementDetail() {
                 className="btn-primary px-5 py-2 rounded-xl text-sm flex items-center gap-1.5"
                 style={{ background: '#059669', boxShadow: '0 4px 14px rgba(5,150,105,0.3)' }}
               >
-                <Check size={14} /> Бекіту
+                <Check size={14} /> {t('moderation.approve')}
               </button>
               <button
                 onClick={() => moderate('rejected')}
@@ -340,7 +354,7 @@ export default function AchievementDetail() {
                 className="btn-primary px-5 py-2 rounded-xl text-sm flex items-center gap-1.5"
                 style={{ background: '#dc2626', boxShadow: '0 4px 14px rgba(220,38,38,0.3)' }}
               >
-                <X size={14} /> Бас тарту
+                <X size={14} /> {t('moderation.reject')}
               </button>
             </div>
           </div>
@@ -349,7 +363,7 @@ export default function AchievementDetail() {
         {/* Бас тарту себебі */}
         {achievement.status === 'rejected' && achievement.moderator_comment && (
           <div className="px-7 py-4 border-t border-white/10 alert-error mx-7 my-4" style={{ borderRadius: 14 }}>
-            <strong>Бас тарту себебі:</strong> {achievement.moderator_comment}
+            <strong>{t('achievements.rejectionReason')}</strong> {achievement.moderator_comment}
           </div>
         )}
 
@@ -357,7 +371,7 @@ export default function AchievementDetail() {
         {showInteractions && (
           <div className="px-7 py-6 border-t border-white/10">
             <h3 className="text-base font-semibold text-theme mb-4">
-              Пікірлер ({comments.length})
+              {t('achievements.comments')} ({comments.length})
             </h3>
 
             {user ? (
@@ -366,7 +380,7 @@ export default function AchievementDetail() {
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   rows={3}
-                  placeholder="Пікіріңізді жазыңыз..."
+                  placeholder={t('achievements.commentPlaceholder')}
                   className="glass-input"
                 />
                 <button
@@ -374,18 +388,18 @@ export default function AchievementDetail() {
                   disabled={submitting || !newComment.trim()}
                   className="btn-primary px-5 py-2 rounded-xl text-sm"
                 >
-                  {submitting ? 'Жіберілуде...' : 'Жариялау'}
+                  {submitting ? t('achievements.commentSubmitting') : t('achievements.commentSubmit')}
                 </button>
               </form>
             ) : (
               <div className="glass-panel px-5 py-4 text-sm text-muted text-center mb-5">
-                Пікір қалдыру үшін{' '}
-                <Link to="/login" className="text-accent font-medium hover:underline">кіріңіз</Link>
+                {t('achievements.loginToComment')}{' '}
+                <Link to="/login" className="text-accent font-medium hover:underline">{t('achievements.loginLink')}</Link>
               </div>
             )}
 
             {comments.length === 0 ? (
-              <p className="text-center text-muted text-sm py-6">Әзірше пікір жоқ</p>
+              <p className="text-center text-muted text-sm py-6">{t('achievements.noComments')}</p>
             ) : (
               <div className="space-y-4">
                 {comments.map((c) => (
@@ -401,7 +415,7 @@ export default function AchievementDetail() {
                         <Link to={`/users/${c.user_id}`} className="text-sm font-semibold text-theme hover:text-accent smooth">{c.author_name}</Link>
                         {c.author_role !== 'student' && (
                           <span className="badge text-[10px]">
-                            {c.author_role === 'curator' ? 'Куратор' : 'Admin'}
+                            {c.author_role === 'curator' ? t('profile.roles.curator') : t('profile.roles.admin')}
                           </span>
                         )}
                         <span className="text-xs text-muted ml-auto">

@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { CheckCircle2, GraduationCap, CalendarDays, Heart, MessageCircle, Trophy, ChevronRight, Flame, Plus, BookOpen, Dumbbell, Star, Palette, Handshake, Award } from 'lucide-react';
+import {
+  CheckCircle2, GraduationCap, CalendarDays, Heart, MessageCircle,
+  Trophy, ChevronRight, Flame, Plus, BookOpen, Dumbbell, Star,
+  Palette, Handshake, Award,
+} from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { useAuth } from '../contexts/AuthContext';
-import { CATEGORIES, CATEGORY_LABELS } from '../lib/constants';
+import { CATEGORIES } from '../lib/constants';
 import { CategoryBadgeIcon, CategoryCardIcon } from '../components/CategoryIcon';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
@@ -24,6 +29,7 @@ function StatCard({ Icon, iconColor, iconBg, value, label }) {
 }
 
 function MiniLeaderboard({ students }) {
+  const { t } = useTranslation();
   if (!students || students.length === 0) return null;
 
   return (
@@ -31,13 +37,10 @@ function MiniLeaderboard({ students }) {
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-1.5">
           <Trophy size={14} className="text-accent" />
-          <span className="text-sm font-semibold text-theme">Үздік студенттер</span>
+          <span className="text-sm font-semibold text-theme">{t('home.topStudents')}</span>
         </div>
-        <Link
-          to="/leaderboard"
-          className="text-xs text-accent hover:underline flex items-center gap-0.5 smooth"
-        >
-          Барлығы <ChevronRight size={12} />
+        <Link to="/leaderboard" className="text-xs text-accent hover:underline flex items-center gap-0.5 smooth">
+          {t('home.seeAll')} <ChevronRight size={12} />
         </Link>
       </div>
 
@@ -76,15 +79,21 @@ function MiniLeaderboard({ students }) {
 }
 
 function MonthCard({ stats, user }) {
-  const topLabel = stats?.top_category
-    ? { academic: 'Оқу', sport: 'Спорт', cultural: 'Мәдениет', social: 'Қоғамдық', other: 'Басқа' }[stats.top_category]
-    : null;
+  const { t } = useTranslation();
+  const catLabels = {
+    academic: t('achievements.category.academic'),
+    sport: t('achievements.category.sport'),
+    cultural: t('achievements.category.cultural'),
+    social: t('achievements.category.social'),
+    other: t('achievements.category.other'),
+  };
+  const topLabel = stats?.top_category ? catLabels[stats.top_category] : null;
 
   return (
     <div className="glass-panel p-4 flex-1 flex flex-col justify-between">
       <div className="flex items-center gap-1.5 mb-3">
         <Flame size={14} style={{ color: '#f97316' }} />
-        <span className="text-sm font-semibold text-theme">Осы айда</span>
+        <span className="text-sm font-semibold text-theme">{t('home.thisMonth')}</span>
       </div>
 
       <div className="flex-1 flex flex-col justify-center gap-3">
@@ -97,13 +106,13 @@ function MonthCard({ stats, user }) {
           </div>
           <div>
             <div className="text-xl font-bold text-theme">{stats?.this_month ?? 0}</div>
-            <div className="text-[11px] text-muted">жаңа жетістік</div>
+            <div className="text-[11px] text-muted">{t('home.newAchievement')}</div>
           </div>
         </div>
 
         {topLabel && (
           <div className="flex items-center gap-2 text-xs text-muted">
-            <span>Үздік санат:</span>
+            <span>{t('home.topCategory')}</span>
             <span className="font-medium text-theme">{topLabel}</span>
           </div>
         )}
@@ -114,7 +123,7 @@ function MonthCard({ stats, user }) {
         className="mt-3 btn-primary w-full py-2 rounded-xl text-xs flex items-center justify-center gap-1.5"
       >
         <Plus size={13} />
-        {user ? 'Жетістік қосу' : 'Тіркелу'}
+        {user ? t('home.addAchievement') : t('nav.register')}
       </Link>
     </div>
   );
@@ -122,11 +131,20 @@ function MonthCard({ stats, user }) {
 
 export default function Home() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [achievements, setAchievements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
   const [stats, setStats] = useState(null);
   const [topStudents, setTopStudents] = useState([]);
+
+  const catLabels = {
+    academic: t('achievements.category.academic'),
+    sport: t('achievements.category.sport'),
+    cultural: t('achievements.category.cultural'),
+    social: t('achievements.category.social'),
+    other: t('achievements.category.other'),
+  };
 
   useEffect(() => {
     api.get('/stats/summary').then((r) => setStats(r.data)).catch(() => {});
@@ -168,28 +186,28 @@ export default function Home() {
               <GraduationCap size={28} style={{ color: '#f59e0b' }} strokeWidth={1.5} />
             </div>
             <h1 className="text-3xl md:text-4xl font-bold text-theme mb-2 leading-tight">
-              Студент жетістіктері
+              {t('home.heroTitle')}
             </h1>
             <p className="text-muted text-base max-w-md mb-6">
-              Олимпиадалар, спорт жарыстары, шығармашылық жобалар — барлығын бір жерде
+              {t('home.heroSubtitle')}
             </p>
             <div className="flex justify-center md:justify-start flex-wrap gap-3">
               {!user ? (
                 <>
                   <Link to="/register" className="btn-primary px-6 py-2.5 rounded-2xl text-sm">
-                    Тіркелу
+                    {t('nav.register')}
                   </Link>
                   <Link to="/login" className="btn-glass px-6 py-2.5 text-sm rounded-xl">
-                    Кіру
+                    {t('nav.login')}
                   </Link>
                 </>
               ) : (
                 <>
                   <Link to="/add" className="btn-primary px-6 py-2.5 rounded-2xl text-sm">
-                    + Жетістік қосу
+                    {t('home.addAchievement')}
                   </Link>
                   <Link to="/leaderboard" className="btn-glass px-6 py-2.5 text-sm rounded-xl">
-                    Рейтинг
+                    {t('nav.rating')}
                   </Link>
                 </>
               )}
@@ -213,8 +231,7 @@ export default function Home() {
 
             <div className="absolute z-10 flex items-center justify-center rounded-2xl"
               style={{ width: 42, height: 42, top: 14, left: 119,
-                background: 'rgba(99,102,241,0.14)',
-                backdropFilter: 'blur(12px)',
+                background: 'rgba(99,102,241,0.14)', backdropFilter: 'blur(12px)',
                 border: '1px solid rgba(99,102,241,0.28)',
                 animation: 'orbFloat 6s ease-in-out infinite alternate', '--ty': '-9px' }}>
               <BookOpen size={18} style={{ color: '#818cf8' }} />
@@ -222,8 +239,7 @@ export default function Home() {
 
             <div className="absolute z-10 flex items-center justify-center rounded-2xl"
               style={{ width: 42, height: 42, top: 99, left: 18,
-                background: 'rgba(239,68,68,0.13)',
-                backdropFilter: 'blur(12px)',
+                background: 'rgba(239,68,68,0.13)', backdropFilter: 'blur(12px)',
                 border: '1px solid rgba(239,68,68,0.22)',
                 animation: 'orbFloat 7s ease-in-out infinite alternate', '--tx': '-9px', animationDelay: '-2.5s' }}>
               <Dumbbell size={18} style={{ color: '#f87171' }} />
@@ -231,8 +247,7 @@ export default function Home() {
 
             <div className="absolute z-10 flex items-center justify-center rounded-2xl"
               style={{ width: 42, height: 42, top: 99, right: 14,
-                background: 'rgba(245,158,11,0.14)',
-                backdropFilter: 'blur(12px)',
+                background: 'rgba(245,158,11,0.14)', backdropFilter: 'blur(12px)',
                 border: '1px solid rgba(245,158,11,0.26)',
                 animation: 'orbFloat 5s ease-in-out infinite alternate', '--tx': '9px', animationDelay: '-1s' }}>
               <Star size={18} style={{ color: '#f59e0b' }} />
@@ -240,8 +255,7 @@ export default function Home() {
 
             <div className="absolute z-10 flex items-center justify-center rounded-2xl"
               style={{ width: 42, height: 42, bottom: 14, left: 119,
-                background: 'rgba(16,185,129,0.13)',
-                backdropFilter: 'blur(12px)',
+                background: 'rgba(16,185,129,0.13)', backdropFilter: 'blur(12px)',
                 border: '1px solid rgba(16,185,129,0.24)',
                 animation: 'orbFloat 8s ease-in-out infinite alternate', '--ty': '9px', animationDelay: '-4s' }}>
               <GraduationCap size={18} style={{ color: '#34d399' }} />
@@ -249,8 +263,7 @@ export default function Home() {
 
             <div className="absolute z-10 flex items-center justify-center rounded-2xl"
               style={{ width: 38, height: 38, top: 42, left: 46,
-                background: 'rgba(139,92,246,0.13)',
-                backdropFilter: 'blur(12px)',
+                background: 'rgba(139,92,246,0.13)', backdropFilter: 'blur(12px)',
                 border: '1px solid rgba(139,92,246,0.25)',
                 animation: 'orbFloat 9s ease-in-out infinite alternate', '--tx': '-7px', '--ty': '-7px', animationDelay: '-1.8s' }}>
               <Palette size={16} style={{ color: '#a78bfa' }} />
@@ -258,8 +271,7 @@ export default function Home() {
 
             <div className="absolute z-10 flex items-center justify-center rounded-2xl"
               style={{ width: 38, height: 38, top: 42, right: 30,
-                background: 'rgba(20,184,166,0.13)',
-                backdropFilter: 'blur(12px)',
+                background: 'rgba(20,184,166,0.13)', backdropFilter: 'blur(12px)',
                 border: '1px solid rgba(20,184,166,0.25)',
                 animation: 'orbFloat 7.5s ease-in-out infinite alternate', '--tx': '7px', '--ty': '-7px', animationDelay: '-6s' }}>
               <Handshake size={16} style={{ color: '#2dd4bf' }} />
@@ -267,8 +279,7 @@ export default function Home() {
 
             <div className="absolute z-10 flex items-center justify-center rounded-2xl"
               style={{ width: 38, height: 38, bottom: 42, right: 30,
-                background: 'rgba(245,158,11,0.13)',
-                backdropFilter: 'blur(12px)',
+                background: 'rgba(245,158,11,0.13)', backdropFilter: 'blur(12px)',
                 border: '1px solid rgba(245,158,11,0.24)',
                 animation: 'orbFloat 6s ease-in-out infinite alternate', '--tx': '7px', '--ty': '7px', animationDelay: '-3s' }}>
               <Award size={16} style={{ color: '#fbbf24' }} />
@@ -286,21 +297,21 @@ export default function Home() {
             iconColor="#059669"
             iconBg="rgba(16,185,129,0.12)"
             value={stats.total_approved}
-            label="Жетістіктер"
+            label={t('home.totalAchievements')}
           />
           <StatCard
             Icon={GraduationCap}
             iconColor="#6366f1"
             iconBg="rgba(99,102,241,0.12)"
             value={stats.total_students}
-            label="Студенттер"
+            label={t('home.totalStudents')}
           />
           <StatCard
             Icon={CalendarDays}
             iconColor="#8b5cf6"
             iconBg="rgba(139,92,246,0.12)"
             value={stats.this_month}
-            label="Осы ай"
+            label={t('home.thisMonthStat')}
           />
         </div>
       )}
@@ -319,7 +330,7 @@ export default function Home() {
             filter === '' ? 'btn-primary' : 'btn-glass'
           }`}
         >
-          Барлығы
+          {t('home.all')}
         </button>
         {CATEGORIES.map((cat) => (
           <button
@@ -330,13 +341,13 @@ export default function Home() {
             }`}
           >
             <CategoryBadgeIcon category={cat} size={13} />
-            {CATEGORY_LABELS[cat]}
+            {catLabels[cat]}
           </button>
         ))}
       </div>
 
       {loading ? (
-        <div className="text-center text-muted py-16 text-sm">Жүктелуде...</div>
+        <div className="text-center text-muted py-16 text-sm">{t('common.loading')}</div>
       ) : achievements.length === 0 ? (
         <div className="glass-panel text-center py-14 px-8 flex flex-col items-center">
           <svg width="120" height="100" viewBox="0 0 120 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-5 opacity-60">
@@ -350,9 +361,9 @@ export default function Home() {
             <circle cx="82" cy="62" r="10" fill="rgba(16,185,129,0.2)" />
             <path d="M77.5 62 L80.5 65 L86 59" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <p className="text-theme font-semibold text-base mb-1">Жетістіктер жоқ</p>
+          <p className="text-theme font-semibold text-base mb-1">{t('home.noAchievementsTitle')}</p>
           <p className="text-muted text-sm">
-            {filter ? 'Бұл санатта расталған жетістіктер жоқ' : 'Алғашқы жетістіктерді күтуде'}
+            {filter ? t('home.noAchievementsFilter') : t('home.noAchievementsEmpty')}
           </p>
         </div>
       ) : (
@@ -370,7 +381,7 @@ export default function Home() {
                 <div className="p-5 flex flex-col flex-1">
                   <div className="badge mb-3 flex items-center gap-1.5 w-fit">
                     <CategoryBadgeIcon category={a.category} size={12} />
-                    {CATEGORY_LABELS[a.category] || a.category}
+                    {catLabels[a.category] || a.category}
                   </div>
                   <h3 className="font-semibold text-theme text-base leading-snug mb-2 line-clamp-2 group-hover:text-accent smooth">
                     {a.title}

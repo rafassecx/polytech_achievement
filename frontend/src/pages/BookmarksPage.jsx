@@ -1,13 +1,22 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Bookmark, Heart, MessageCircle } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
-import { CATEGORY_LABELS } from '../lib/constants';
 import { CategoryBadgeIcon, CategoryCardIcon } from '../components/CategoryIcon';
 
 export default function BookmarksPage() {
   const [bookmarks, setBookmarks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
+
+  const catLabels = {
+    academic: t('achievements.category.academic'),
+    sport: t('achievements.category.sport'),
+    cultural: t('achievements.category.cultural'),
+    social: t('achievements.category.social'),
+    other: t('achievements.category.other'),
+  };
 
   useEffect(() => {
     api.get('/bookmarks')
@@ -26,27 +35,25 @@ export default function BookmarksPage() {
           <Bookmark size={18} className="text-accent" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold text-theme">Таңдаулылар</h1>
-          <p className="text-muted text-sm mt-0.5">Сақталған жетістіктер: {bookmarks.length}</p>
+          <h1 className="text-2xl font-bold text-theme">{t('profile.bookmarks')}</h1>
+          <p className="text-muted text-sm mt-0.5">{t('admin.total', { count: bookmarks.length })}</p>
         </div>
       </div>
 
       {loading ? (
-        <div className="text-center text-muted py-16 text-sm">Жүктелуде...</div>
+        <div className="text-center text-muted py-16 text-sm">{t('common.loading')}</div>
       ) : bookmarks.length === 0 ? (
         <div className="glass-panel text-center py-14 px-8 flex flex-col items-center">
           <svg width="110" height="100" viewBox="0 0 110 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="mb-5 opacity-55">
             <circle cx="55" cy="52" r="36" fill="rgba(99,102,241,0.08)" />
-            {/* Кітапша */}
             <rect x="30" y="30" width="28" height="38" rx="4" fill="rgba(99,102,241,0.15)" />
             <path d="M30 34 Q44 30 58 34 L58 68 Q44 64 30 68 Z" fill="rgba(99,102,241,0.22)" />
-            {/* Жер белгісі */}
             <path d="M68 24 L68 52 L61 46 L54 52 L54 24 Z" fill="rgba(245,158,11,0.55)" stroke="rgba(245,158,11,0.8)" strokeWidth="1" strokeLinejoin="round" />
           </svg>
-          <p className="text-theme font-semibold text-base mb-1">Таңдаулылар жоқ</p>
-          <p className="text-muted text-sm mb-4">Жетістіктерді таңдаулыларға қосыңыз</p>
+          <p className="text-theme font-semibold text-base mb-1">{t('profile.noBookmarks')}</p>
+          <p className="text-muted text-sm mb-4">{t('profile.browseAchievements')}</p>
           <Link to="/" className="text-accent text-sm hover:underline font-medium">
-            Жетістіктерді қарау
+            {t('profile.browseAchievements')}
           </Link>
         </div>
       ) : (
@@ -64,7 +71,7 @@ export default function BookmarksPage() {
                 <div className="p-5 flex flex-col flex-1">
                   <div className="badge mb-3 flex items-center gap-1.5 w-fit">
                     <CategoryBadgeIcon category={a.category} size={12} />
-                    {CATEGORY_LABELS[a.category] || a.category}
+                    {catLabels[a.category] || a.category}
                   </div>
                   <h3 className="font-semibold text-theme text-base leading-snug mb-1 line-clamp-2 group-hover:text-accent smooth">
                     {a.title}

@@ -16,8 +16,6 @@ import { useTheme } from '../contexts/ThemeContext';
 import { useModal } from '../contexts/ModalContext';
 import api from '../lib/api';
 
-const ROLE_LABELS = { student: 'Студент', curator: 'Куратор', admin: 'Admin' };
-
 function TabBtn({ active, onClick, children }) {
   return (
     <button
@@ -47,44 +45,33 @@ export default function Profile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Редактирование
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({ full_name: '', bio: '' });
   const [saving, setSaving] = useState(false);
   const [editError, setEditError] = useState('');
 
-  // Аватар
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
-  // Telegram
   const [tgCode, setTgCode] = useState(null);
   const [generatingCode, setGeneratingCode] = useState(false);
   const [tgError, setTgError] = useState('');
 
-  // Пароль
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
   const [pwLoading, setPwLoading] = useState(false);
   const [pwMsg, setPwMsg] = useState(null);
   const [showPw, setShowPw] = useState({ current: false, next: false, confirm: false });
 
-  // Запрос смены группы
   const [groupRequest, setGroupRequest] = useState(null);
   const [showGroupForm, setShowGroupForm] = useState(false);
   const [newGroup, setNewGroup] = useState('');
   const [groupSending, setGroupSending] = useState(false);
   const [groupMsg, setGroupMsg] = useState(null);
 
-  // Входящие заявки в друзья
   const [friendRequests, setFriendRequests] = useState([]);
   const [processingFriend, setProcessingFriend] = useState(null);
 
-  // Список друзей
   const [friends, setFriends] = useState([]);
-
-  // Закладки
   const [bookmarks, setBookmarks] = useState([]);
-
-  // Поделиться
   const [copied, setCopied] = useState(false);
 
   const loadProfile = async () => {
@@ -147,7 +134,7 @@ export default function Profile() {
       updateUser({ ...user, ...data.user });
       setEditing(false);
     } catch (err) {
-      setEditError(err.response?.data?.message || 'Қате');
+      setEditError(err.response?.data?.message || t('common.error'));
     } finally {
       setSaving(false);
     }
@@ -164,7 +151,7 @@ export default function Profile() {
       setProfile({ ...profile, avatar_url: data.avatar_url });
       updateUser({ ...user, avatar_url: data.avatar_url });
     } catch (err) {
-      await showAlert(err.response?.data?.message || 'Қате орын алды');
+      await showAlert(err.response?.data?.message || t('common.error'));
     } finally {
       setUploadingAvatar(false);
     }
@@ -177,36 +164,42 @@ export default function Profile() {
       const { data } = await api.post('/users/me/telegram-code');
       setTgCode(data);
     } catch (err) {
-      setTgError(err.response?.data?.message || 'Қате');
+      setTgError(err.response?.data?.message || t('common.error'));
     } finally {
       setGeneratingCode(false);
     }
   };
 
   const unlinkTelegram = async () => {
-    const ok = await showConfirm('Telegram-ды ажыратуды растайсыз ба?');
+    const ok = await showConfirm(t('profile.telegramDisconnectConfirm'));
     if (!ok) return;
     try {
       await api.post('/users/me/telegram-unlink');
       await loadProfile();
       setTgCode(null);
     } catch (err) {
-      await showAlert(err.response?.data?.message || 'Қате');
+      await showAlert(err.response?.data?.message || t('common.error'));
     }
   };
 
   const handlePassword = async (e) => {
     e.preventDefault();
     setPwMsg(null);
-    if (pwForm.next !== pwForm.confirm) { setPwMsg({ ok: false, text: 'Жаңа құпиясөздер сәйкес келмейді' }); return; }
-    if (pwForm.next.length < 6) { setPwMsg({ ok: false, text: 'Жаңа құпиясөз кемінде 6 таңба' }); return; }
+    if (pwForm.next !== pwForm.confirm) {
+      setPwMsg({ ok: false, text: t('register.errorMatch') });
+      return;
+    }
+    if (pwForm.next.length < 6) {
+      setPwMsg({ ok: false, text: t('register.errorLength') });
+      return;
+    }
     setPwLoading(true);
     try {
       await api.post('/users/me/password', { currentPassword: pwForm.current, newPassword: pwForm.next });
-      setPwMsg({ ok: true, text: 'Құпиясөз сәтті өзгертілді' });
+      setPwMsg({ ok: true, text: t('settings.passwordSuccess') });
       setPwForm({ current: '', next: '', confirm: '' });
     } catch (err) {
-      setPwMsg({ ok: false, text: err.response?.data?.message || 'Қате' });
+      setPwMsg({ ok: false, text: err.response?.data?.message || t('common.error') });
     } finally {
       setPwLoading(false);
     }
@@ -219,12 +212,12 @@ export default function Profile() {
     setGroupMsg(null);
     try {
       await api.post('/users/me/group-request', { requested_group: newGroup.trim() });
-      setGroupMsg({ ok: true, text: 'Сұрау жіберілді. Модератор қарайды.' });
+      setGroupMsg({ ok: true, text: t('profile.groupRequestSent') });
       setShowGroupForm(false);
       setNewGroup('');
       loadGroupRequest();
     } catch (err) {
-      setGroupMsg({ ok: false, text: err.response?.data?.message || 'Қате' });
+      setGroupMsg({ ok: false, text: err.response?.data?.message || t('common.error') });
     } finally {
       setGroupSending(false);
     }
@@ -258,15 +251,19 @@ export default function Profile() {
     });
   };
 
-  if (loading) return <div className="text-center text-muted py-20 text-sm">Жүктелуде...</div>;
+  if (loading) return <div className="text-center text-muted py-20 text-sm">{t('common.loading')}</div>;
   if (!profile) return null;
 
   const isStudent = user?.role === 'student';
+  const roleLabels = {
+    student: t('profile.roles.student'),
+    curator: t('profile.roles.curator'),
+    admin: t('profile.roles.admin'),
+  };
 
   return (
     <div className="max-w-2xl mx-auto px-5 py-8 space-y-5">
 
-      {/* Аватар + аты + публичный профиль */}
       <div className="glass-panel p-6">
         <div className="flex items-center gap-5">
           <div className="relative group shrink-0">
@@ -293,7 +290,7 @@ export default function Profile() {
           <div className="flex-1 min-w-0">
             <h2 className="text-xl font-semibold text-theme">{profile.full_name}</h2>
             <div className="flex flex-wrap gap-2 mt-1.5">
-              <span className="badge">{ROLE_LABELS[profile.role] || profile.role}</span>
+              <span className="badge">{roleLabels[profile.role] || profile.role}</span>
               {profile.group_name && <span className="badge">{profile.group_name}</span>}
             </div>
             <p className="text-xs text-muted mt-2">{profile.email}</p>
@@ -304,33 +301,30 @@ export default function Profile() {
             className="btn-glass px-3 py-1.5 text-xs flex items-center gap-1.5 shrink-0 smooth"
             style={copied ? { color: 'var(--clr-success)', borderColor: 'rgba(16,185,129,0.4)' } : {}}
           >
-            {copied ? <><Check size={12} /> Көшірілді</> : <><Share2 size={12} /> Бөлісу</>}
+            {copied ? <><Check size={12} /> {t('profile.copied')}</> : <><Share2 size={12} /> {t('profile.share')}</>}
           </button>
         </div>
       </div>
 
-      {/* Вкладки */}
       <div className="glass-panel p-1.5 grid grid-cols-2 gap-1" style={{ borderRadius: 18 }}>
-        <TabBtn active={tab === 'profile'} onClick={() => setTab('profile')}>Профиль</TabBtn>
-        <TabBtn active={tab === 'settings'} onClick={() => setTab('settings')}>Баптаулар</TabBtn>
+        <TabBtn active={tab === 'profile'} onClick={() => setTab('profile')}>{t('profile.tabs.profile')}</TabBtn>
+        <TabBtn active={tab === 'settings'} onClick={() => setTab('settings')}>{t('profile.tabs.settings')}</TabBtn>
       </div>
 
-      {/* ── ПРОФИЛЬ ── */}
       {tab === 'profile' && (
         <>
-          {/* Достар тізімі — бірінші орында */}
           <div className="glass-panel p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-theme flex items-center gap-2">
-                <Users size={16} className="text-accent" /> Достарым
+                <Users size={16} className="text-accent" /> {t('profile.myFriends')}
                 <span className="badge ml-1">{friends.length}</span>
               </h3>
               <Link to={`/users/${user?.id}`} className="text-xs text-accent hover:underline smooth">
-                Барлығын көру
+                {t('profile.viewAll')}
               </Link>
             </div>
             {friends.length === 0 ? (
-              <p className="text-sm text-muted">Достар жоқ. Достыққа қосу үшін профильдерге кіріңіз.</p>
+              <p className="text-sm text-muted">{t('profile.noFriends')}</p>
             ) : (
               <div className="grid grid-cols-2 gap-2">
                 {friends.slice(0, 6).map((f) => (
@@ -354,11 +348,10 @@ export default function Profile() {
             )}
           </div>
 
-          {/* Входящие заявки в друзья */}
           {friendRequests.length > 0 && (
             <div className="glass-panel p-5">
               <h3 className="text-sm font-semibold text-theme mb-3 flex items-center gap-2">
-                <Users size={15} className="text-accent" /> Достық сұраулары ({friendRequests.length})
+                <Users size={15} className="text-accent" /> {t('profile.friendRequests', { count: friendRequests.length })}
               </h3>
               <div className="space-y-3">
                 {friendRequests.map((r) => (
@@ -397,13 +390,12 @@ export default function Profile() {
             </div>
           )}
 
-          {/* Редактирование профиля (без группы) */}
           <div className="glass-panel p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-base font-semibold text-theme">Профильді өзгерту</h3>
+              <h3 className="text-base font-semibold text-theme">{t('profile.editTitle')}</h3>
               {!editing && (
                 <button onClick={() => setEditing(true)} className="btn-glass px-3 py-1.5 text-xs flex items-center gap-1.5">
-                  <Pencil size={13} /> Өзгерту
+                  <Pencil size={13} /> {t('profile.editBtn')}
                 </button>
               )}
             </div>
@@ -412,34 +404,34 @@ export default function Profile() {
               <form onSubmit={handleSave} className="space-y-4">
                 {editError && <div className="alert-error">{editError}</div>}
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-theme">Аты-жөні</label>
+                  <label className="text-sm font-medium text-theme">{t('profile.fullName')}</label>
                   <input type="text" value={form.full_name}
                     onChange={(e) => setForm({ ...form, full_name: e.target.value })}
                     className="glass-input" />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium text-theme">Био</label>
+                  <label className="text-sm font-medium text-theme">{t('profile.bio')}</label>
                   <textarea value={form.bio}
                     onChange={(e) => setForm({ ...form, bio: e.target.value })}
-                    rows={3} className="glass-input" placeholder="Өзіңіз туралы қысқаша..." />
+                    rows={3} className="glass-input" placeholder={t('profile.bioPlaceholder')} />
                 </div>
                 <div className="flex gap-3">
                   <button type="submit" disabled={saving}
                     className="btn-primary px-5 py-2 rounded-xl text-sm flex items-center gap-1.5">
-                    <Check size={14} /> {saving ? 'Сақталуда...' : 'Сақтау'}
+                    <Check size={14} /> {saving ? t('profile.saving') : t('profile.save')}
                   </button>
                   <button type="button" disabled={saving} onClick={() => { setEditing(false); setEditError(''); setForm({ full_name: profile.full_name || '', bio: profile.bio || '' }); }}
                     className="btn-glass px-5 py-2 text-sm flex items-center gap-1.5">
-                    <X size={14} /> Бас тарту
+                    <X size={14} /> {t('profile.cancel')}
                   </button>
                 </div>
               </form>
             ) : (
               <dl className="space-y-3 text-sm">
                 {[
-                  { label: 'Аты-жөні', value: profile.full_name },
-                  { label: 'Топ', value: profile.group_name },
-                  { label: 'Био', value: profile.bio },
+                  { label: t('profile.fullName'), value: profile.full_name },
+                  { label: t('profile.group'), value: profile.group_name },
+                  { label: t('profile.bio'), value: profile.bio },
                 ].map(({ label, value }) => (
                   <div key={label}>
                     <dt className="text-muted mb-0.5">{label}</dt>
@@ -450,13 +442,10 @@ export default function Profile() {
             )}
           </div>
 
-          {/* Топ ауыстыру сұрауы */}
           {isStudent && (
             <div className="glass-panel p-6">
-              <h3 className="text-base font-semibold text-theme mb-1">Топты ауыстыру</h3>
-              <p className="text-xs text-muted mb-4">
-                Топты тікелей өзгерту мүмкін емес. Сұрау жіберіңіз — модератор мақұлдайды.
-              </p>
+              <h3 className="text-base font-semibold text-theme mb-1">{t('profile.groupChange')}</h3>
+              <p className="text-xs text-muted mb-4">{t('profile.groupChangeNote')}</p>
 
               {groupMsg && (
                 <div className={`${groupMsg.ok ? 'alert-success' : 'alert-error'} mb-4`}>{groupMsg.text}</div>
@@ -466,12 +455,12 @@ export default function Profile() {
                 <div className="flex items-center justify-between glass-panel p-3" style={{ borderRadius: 12 }}>
                   <div className="flex items-center gap-2 text-sm">
                     <Clock size={14} style={{ color: '#f59e0b' }} />
-                    <span className="text-muted">Сұрау:</span>
+                    <span className="text-muted">{t('profile.groupPendingLabel')}</span>
                     <span className="font-medium text-theme">«{groupRequest.requested_group}»</span>
-                    <span className="text-xs text-muted">— модерацияда</span>
+                    <span className="text-xs text-muted">{t('profile.groupPendingStatus')}</span>
                   </div>
                   <button onClick={cancelGroupRequest} className="text-xs text-muted hover:text-danger smooth">
-                    Жою
+                    {t('profile.groupDelete')}
                   </button>
                 </div>
               ) : showGroupForm ? (
@@ -480,34 +469,33 @@ export default function Profile() {
                     type="text"
                     value={newGroup}
                     onChange={(e) => setNewGroup(e.target.value)}
-                    placeholder="Жаңа топ: P22-2B"
+                    placeholder={t('profile.groupPlaceholder')}
                     className="glass-input"
                     autoFocus
                   />
                   <div className="flex gap-2">
                     <button type="submit" disabled={groupSending || !newGroup.trim()}
                       className="btn-primary px-4 py-2 rounded-xl text-sm">
-                      {groupSending ? 'Жіберілуде...' : 'Жіберу'}
+                      {groupSending ? t('profile.groupSending') : t('profile.groupSend')}
                     </button>
                     <button type="button" onClick={() => { setShowGroupForm(false); setNewGroup(''); }}
                       className="btn-glass px-4 py-2 text-sm">
-                      Бас тарту
+                      {t('profile.cancel')}
                     </button>
                   </div>
                 </form>
               ) : (
                 <button onClick={() => setShowGroupForm(true)}
                   className="btn-glass px-4 py-2 text-sm flex items-center gap-1.5">
-                  <Pencil size={13} /> Топты ауыстыруды сұрау
+                  <Pencil size={13} /> {t('profile.groupRequest')}
                 </button>
               )}
             </div>
           )}
 
-          {/* Telegram */}
           <div className="glass-panel p-6">
             <h3 className="text-base font-semibold text-theme mb-4 flex items-center gap-2">
-              <Send size={16} /> Telegram
+              <Send size={16} /> {t('profile.telegramTitle')}
             </h3>
             {tgError && <div className="alert-error mb-4">{tgError}</div>}
 
@@ -519,36 +507,37 @@ export default function Profile() {
                     <Send size={18} className="text-accent" />
                   </div>
                   <div>
-                    <div className="text-sm font-medium text-theme">Байланыстырылған</div>
+                    <div className="text-sm font-medium text-theme">{t('profile.telegramLinked')}</div>
                     {profile.telegram_username && <div className="text-xs text-muted">@{profile.telegram_username}</div>}
                   </div>
                 </div>
                 <button onClick={unlinkTelegram} className="btn-glass px-3 py-1.5 text-xs flex items-center gap-1.5"
                   style={{ color: 'var(--clr-danger)' }}>
-                  <Unlink size={13} /> Ажырату
+                  <Unlink size={13} /> {t('profile.telegramDisconnect')}
                 </button>
               </div>
             ) : tgCode ? (
               <div className="glass-card p-5" style={{ borderRadius: 14 }}>
-                <p className="text-sm text-theme mb-3">Telegram ботында жіберіңіз:</p>
+                <p className="text-sm text-theme mb-3">{t('profile.telegramCodeSend')}</p>
                 <div className="glass-panel p-3 mb-3 text-center">
                   <code className="text-xl font-mono tracking-widest text-accent">/link {tgCode.code}</code>
                 </div>
-                <p className="text-xs text-muted mb-3">Код 10 минут жарамды.</p>
-                <button onClick={() => setTgCode(null)} className="btn-glass px-4 py-1.5 text-xs">Жасыру</button>
+                <p className="text-xs text-muted mb-3">{t('profile.telegramCodeNote')}</p>
+                <button onClick={() => setTgCode(null)} className="btn-glass px-4 py-1.5 text-xs">
+                  {t('profile.telegramHide')}
+                </button>
               </div>
             ) : (
               <div>
-                <p className="text-sm text-muted mb-4">Telegram-ды байланыстыру арқылы бот арқылы жетістіктерді тіркей аласыз.</p>
+                <p className="text-sm text-muted mb-4">{t('profile.telegramDesc')}</p>
                 <button onClick={generateCode} disabled={generatingCode}
                   className="btn-primary px-5 py-2 rounded-xl text-sm flex items-center gap-2">
-                  <Link2 size={14} /> {generatingCode ? 'Жасалуда...' : 'Байланыстыру коды'}
+                  <Link2 size={14} /> {generatingCode ? t('profile.telegramGenerating') : t('profile.telegramConnect')}
                 </button>
               </div>
             )}
           </div>
 
-          {/* Жылдам сілтеме — жетістіктерім */}
           <Link to="/my-achievements"
             className="glass-panel p-4 flex items-center justify-between hover-lift">
             <div className="flex items-center gap-3">
@@ -556,29 +545,28 @@ export default function Profile() {
                 style={{ background: 'rgba(99,102,241,0.12)' }}>
                 <Award size={16} className="text-accent" />
               </div>
-              <span className="text-sm font-medium text-theme">Менің жетістіктерім</span>
+              <span className="text-sm font-medium text-theme">{t('profile.myAchievements')}</span>
             </div>
             <ChevronRight size={16} className="text-muted" />
           </Link>
 
-          {/* Таңдаулылар секциясы */}
           <div className="glass-panel p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-base font-semibold text-theme flex items-center gap-2">
-                <Bookmark size={16} className="text-accent" /> Таңдаулылар
+                <Bookmark size={16} className="text-accent" /> {t('profile.bookmarks')}
                 <span className="badge ml-1">{bookmarks.length}</span>
               </h3>
               {bookmarks.length > 0 && (
                 <Link to="/bookmarks" className="text-xs text-accent hover:underline smooth">
-                  Барлығын көру
+                  {t('profile.viewAll')}
                 </Link>
               )}
             </div>
             {bookmarks.length === 0 ? (
               <div className="text-center py-4">
-                <p className="text-sm text-muted mb-2">Таңдаулылар жоқ</p>
+                <p className="text-sm text-muted mb-2">{t('profile.noBookmarks')}</p>
                 <Link to="/" className="text-xs text-accent hover:underline">
-                  Жетістіктерді қарау
+                  {t('profile.browseAchievements')}
                 </Link>
               </div>
             ) : (
@@ -613,7 +601,7 @@ export default function Profile() {
                 {bookmarks.length > 4 && (
                   <Link to="/bookmarks"
                     className="block text-center text-xs text-accent hover:underline pt-1 smooth">
-                    + тағы {bookmarks.length - 4}
+                    {t('profile.moreBookmarks', { count: bookmarks.length - 4 })}
                   </Link>
                 )}
               </div>
@@ -622,10 +610,8 @@ export default function Profile() {
         </>
       )}
 
-      {/* ── БАПТАУЛАР ── */}
       {tab === 'settings' && (
         <>
-          {/* Тема */}
           <div className="glass-panel p-6">
             <h3 className="text-base font-semibold text-theme mb-4">{t('settings.theme')}</h3>
             <div className="grid grid-cols-2 gap-3">
@@ -646,7 +632,6 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Тіл */}
           <div className="glass-panel p-6">
             <h3 className="text-base font-semibold text-theme mb-4 flex items-center gap-2">
               <Globe size={16} /> {t('settings.language')}
@@ -669,17 +654,16 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Пароль */}
           <div className="glass-panel p-6">
             <h3 className="text-base font-semibold text-theme mb-4 flex items-center gap-2">
-              <Lock size={16} /> Құпиясөзді өзгерту
+              <Lock size={16} /> {t('settings.password')}
             </h3>
             {pwMsg && <div className={`${pwMsg.ok ? 'alert-success' : 'alert-error'} mb-4`}>{pwMsg.text}</div>}
             <form onSubmit={handlePassword} className="space-y-4">
               {[
-                { key: 'current', label: 'Ағымдағы құпиясөз' },
-                { key: 'next', label: 'Жаңа құпиясөз', min: 6, placeholder: 'Кемінде 6 таңба' },
-                { key: 'confirm', label: 'Жаңа құпиясөзді растаңыз' },
+                { key: 'current', label: t('settings.passwordCurrent') },
+                { key: 'next', label: t('settings.passwordNew'), min: 6, placeholder: t('settings.passwordMinLength') },
+                { key: 'confirm', label: t('settings.passwordConfirm') },
               ].map(({ key, label, min, placeholder }) => (
                 <div key={key} className="space-y-1.5">
                   <label className="text-sm font-medium text-theme">{label}</label>
@@ -696,21 +680,20 @@ export default function Profile() {
               ))}
               <button type="submit" disabled={pwLoading}
                 className="btn-primary px-6 py-2.5 rounded-2xl text-sm flex items-center gap-2">
-                <Check size={14} /> {pwLoading ? 'Сақталуда...' : 'Сақтау'}
+                <Check size={14} /> {pwLoading ? t('settings.passwordSaving') : t('settings.passwordSave')}
               </button>
             </form>
           </div>
 
-          {/* Аккаунт */}
           <div className="glass-panel p-6">
             <h3 className="text-base font-semibold text-theme mb-3 flex items-center gap-2">
-              <User size={16} /> Аккаунт
+              <User size={16} /> {t('profile.accountTitle')}
             </h3>
             <dl className="space-y-2.5 text-sm">
               {[
                 { label: 'Email', value: user?.email },
-                { label: 'Рөл', value: ROLE_LABELS[user?.role] || user?.role },
-                user?.group_name ? { label: 'Топ', value: user.group_name } : null,
+                { label: t('profile.roleLabel'), value: roleLabels[user?.role] || user?.role },
+                user?.group_name ? { label: t('profile.group'), value: user.group_name } : null,
               ].filter(Boolean).map(({ label, value }) => (
                 <div key={label} className="flex justify-between">
                   <dt className="text-muted">{label}</dt>
@@ -720,14 +703,13 @@ export default function Profile() {
             </dl>
           </div>
 
-          {/* Жүйе */}
           <div className="glass-panel p-6">
             <h3 className="text-base font-semibold text-theme mb-3 flex items-center gap-2">
-              <Info size={16} /> Жүйе туралы
+              <Info size={16} /> {t('profile.aboutTitle')}
             </h3>
             <dl className="space-y-2 text-sm">
-              <div className="flex justify-between"><dt className="text-muted">Жоба</dt><dd className="text-theme">Achievly</dd></div>
-              <div className="flex justify-between"><dt className="text-muted">Нұсқасы</dt><dd className="text-theme">1.0.0</dd></div>
+              <div className="flex justify-between"><dt className="text-muted">{t('profile.aboutProject')}</dt><dd className="text-theme">Achievly</dd></div>
+              <div className="flex justify-between"><dt className="text-muted">{t('profile.aboutVersion')}</dt><dd className="text-theme">1.0.0</dd></div>
               <div className="flex justify-between"><dt className="text-muted">© 2026</dt><dd className="text-theme">Achievly</dd></div>
             </dl>
           </div>
@@ -736,7 +718,7 @@ export default function Profile() {
             className="w-full glass-panel p-4 flex items-center justify-center gap-2.5 smooth hover:bg-red-500/10 cursor-pointer"
             style={{ color: 'var(--clr-danger)', borderRadius: 18 }}>
             <LogOut size={17} />
-            <span className="text-sm font-semibold">Шығу</span>
+            <span className="text-sm font-semibold">{t('profile.logout')}</span>
           </button>
         </>
       )}
