@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { Home, Trophy, Plus, MessageSquare, ClipboardList, Users, UserCircle, Check } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 import NotificationsBell from './NotificationsBell';
 import api from '../lib/api';
 
 export default function Navbar() {
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [unreadMsgs, setUnreadMsgs] = useState(0);
 
   useEffect(() => {
@@ -34,10 +36,10 @@ export default function Navbar() {
 
   const midItem = user
     ? user.role === 'admin'
-      ? { to: '/admin/users', Icon: Users, label: 'Басқару' }
+      ? { to: '/admin/users', Icon: Users, label: t('nav.admin') }
       : user.role === 'curator'
-      ? { to: '/moderation', Icon: ClipboardList, label: 'Тексеру' }
-      : { to: '/add', Icon: Plus, label: 'Қосу', isAdd: true }
+      ? { to: '/moderation', Icon: ClipboardList, label: t('nav.moderation') }
+      : { to: '/add', Icon: Plus, label: t('nav.add'), isAdd: true }
     : null;
 
   return (
@@ -70,24 +72,24 @@ export default function Navbar() {
           <nav className="hidden md:flex items-center gap-0.5">
             <NavLink to="/" className={lc} end>
               <Home size={15} />
-              <span>Басты бет</span>
+              <span>{t('nav.home')}</span>
             </NavLink>
             <NavLink to="/leaderboard" className={lc}>
               <Trophy size={15} />
-              <span>Рейтинг</span>
+              <span>{t('nav.rating')}</span>
             </NavLink>
             {user && (
               <>
                 {(user.role === 'curator' || user.role === 'admin') && (
                   <NavLink to="/moderation" className={lc}>
                     <ClipboardList size={15} />
-                    <span>Тексеру</span>
+                    <span>{t('nav.moderation')}</span>
                   </NavLink>
                 )}
                 {user.role === 'admin' && (
                   <NavLink to="/admin/users" className={lc}>
                     <Users size={15} />
-                    <span>Басқару</span>
+                    <span>{t('nav.admin')}</span>
                   </NavLink>
                 )}
               </>
@@ -160,9 +162,9 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Link to="/login" className="btn-glass px-3 py-2 text-xs">Кіру</Link>
+                <Link to="/login" className="btn-glass px-3 py-2 text-xs">{t('nav.login')}</Link>
                 <Link to="/register" className="btn-primary px-3 py-2 text-xs rounded-xl">
-                  Тіркелу
+                  {t('nav.register')}
                 </Link>
               </>
             )}
@@ -179,12 +181,12 @@ export default function Navbar() {
         <div className="flex items-center justify-around px-2 py-1 pb-safe">
           <NavLink to="/" className={bottomLinkCls} end>
             <Home size={21} />
-            <span className="text-[10px] font-medium">Басты</span>
+            <span className="text-[10px] font-medium">{t('nav.main')}</span>
           </NavLink>
 
           <NavLink to="/leaderboard" className={bottomLinkCls}>
             <Trophy size={21} />
-            <span className="text-[10px] font-medium">Рейтинг</span>
+            <span className="text-[10px] font-medium">{t('nav.rating')}</span>
           </NavLink>
 
           {user ? (
@@ -223,7 +225,7 @@ export default function Navbar() {
                   </span>
                 )}
               </div>
-              <span className="text-[10px] font-medium">Чат</span>
+              <span className="text-[10px] font-medium">{t('nav.chat')}</span>
             </NavLink>
           ) : (
             <NavLink to="/login" className={bottomLinkCls}>
@@ -244,7 +246,7 @@ export default function Navbar() {
                   {user.full_name?.charAt(0)?.toUpperCase() || '?'}
                 </div>
               )}
-              <span className="text-[10px] font-medium">Профиль</span>
+              <span className="text-[10px] font-medium">{t('nav.profile')}</span>
             </NavLink>
           ) : (
             <NavLink to="/register" className={bottomLinkCls}>

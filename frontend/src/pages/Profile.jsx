@@ -6,7 +6,9 @@ import {
   Sun, Moon, Lock, Eye, EyeOff,
   User, Info, Award, Bookmark, Users,
   UserCheck, UserX, Clock, Share2, Heart, MessageCircle,
+  Globe,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { CATEGORY_LABELS } from '../lib/constants';
 import { CategoryBadgeIcon } from '../components/CategoryIcon';
 import { useAuth } from '../contexts/AuthContext';
@@ -34,6 +36,12 @@ export default function Profile() {
   const { user, updateUser, logout } = useAuth();
   const { dark, toggle: toggleTheme } = useTheme();
   const { showAlert, showConfirm } = useModal();
+  const { t, i18n } = useTranslation();
+
+  const changeLang = (lng) => {
+    i18n.changeLanguage(lng);
+    localStorage.setItem('lang', lng);
+  };
 
   const [tab, setTab] = useState('profile');
   const [profile, setProfile] = useState(null);
@@ -619,21 +627,44 @@ export default function Profile() {
         <>
           {/* Тема */}
           <div className="glass-panel p-6">
-            <h3 className="text-base font-semibold text-theme mb-4">Интерфейс тақырыбы</h3>
+            <h3 className="text-base font-semibold text-theme mb-4">{t('settings.theme')}</h3>
             <div className="grid grid-cols-2 gap-3">
               <button onClick={() => dark && toggleTheme()}
                 className={`relative p-4 rounded-2xl border-2 smooth flex flex-col items-center gap-2 ${!dark ? 'border-indigo-400/60' : 'border-white/20 hover:border-white/40'}`}
                 style={{ background: !dark ? 'rgba(99,102,241,0.10)' : 'var(--glass)' }}>
                 <Sun size={28} className={!dark ? 'text-amber-400' : 'text-muted'} />
-                <span className="text-sm font-medium text-theme">Жарық</span>
+                <span className="text-sm font-medium text-theme">{t('settings.themeLight')}</span>
                 {!dark && <span className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--clr-accent)' }}><Check size={11} className="text-white" /></span>}
               </button>
               <button onClick={() => !dark && toggleTheme()}
                 className={`relative p-4 rounded-2xl border-2 smooth flex flex-col items-center gap-2 ${dark ? 'border-indigo-400/60' : 'border-white/20 hover:border-white/40'}`}
                 style={{ background: dark ? 'rgba(99,102,241,0.10)' : 'var(--glass)' }}>
                 <Moon size={28} className={dark ? 'text-indigo-300' : 'text-muted'} />
-                <span className="text-sm font-medium text-theme">Қараңғы</span>
+                <span className="text-sm font-medium text-theme">{t('settings.themeDark')}</span>
                 {dark && <span className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--clr-accent)' }}><Check size={11} className="text-white" /></span>}
+              </button>
+            </div>
+          </div>
+
+          {/* Тіл */}
+          <div className="glass-panel p-6">
+            <h3 className="text-base font-semibold text-theme mb-4 flex items-center gap-2">
+              <Globe size={16} /> {t('settings.language')}
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={() => changeLang('kk')}
+                className={`relative p-4 rounded-2xl border-2 smooth flex flex-col items-center gap-2 ${i18n.language === 'kk' ? 'border-indigo-400/60' : 'border-white/20 hover:border-white/40'}`}
+                style={{ background: i18n.language === 'kk' ? 'rgba(99,102,241,0.10)' : 'var(--glass)' }}>
+                <span className="text-2xl font-bold text-theme">ҚАЗ</span>
+                <span className="text-sm font-medium text-theme">Қазақша</span>
+                {i18n.language === 'kk' && <span className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--clr-accent)' }}><Check size={11} className="text-white" /></span>}
+              </button>
+              <button onClick={() => changeLang('ru')}
+                className={`relative p-4 rounded-2xl border-2 smooth flex flex-col items-center gap-2 ${i18n.language === 'ru' ? 'border-indigo-400/60' : 'border-white/20 hover:border-white/40'}`}
+                style={{ background: i18n.language === 'ru' ? 'rgba(99,102,241,0.10)' : 'var(--glass)' }}>
+                <span className="text-2xl font-bold text-theme">РУС</span>
+                <span className="text-sm font-medium text-theme">Русский</span>
+                {i18n.language === 'ru' && <span className="absolute top-2 right-2 w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'var(--clr-accent)' }}><Check size={11} className="text-white" /></span>}
               </button>
             </div>
           </div>
