@@ -104,12 +104,14 @@ app.post('/api/tg-hook', async (req, res) => {
   }
 });
 
-app.get('/', (req, res) => {
-  res.json({ 
-    message: 'Сервер работает! 🎉',
-    project: 'Студенттердің жетістіктерін басқару жүйесі'
+if (process.env.NODE_ENV !== 'production') {
+  app.get('/', (req, res) => {
+    res.json({
+      message: 'Сервер работает! 🎉',
+      project: 'Студенттердің жетістіктерін басқару жүйесі'
+    });
   });
-});
+}
 
 app.get('/api/health', async (req, res) => {
   try {
