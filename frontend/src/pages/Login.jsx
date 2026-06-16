@@ -4,6 +4,23 @@ import { Check } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../contexts/AuthContext';
 
+function LangSwitch({ i18n }) {
+  const changeLang = (lng) => {
+    i18n.changeLanguage(lng);
+    localStorage.setItem('lang', lng);
+  };
+  const active = i18n.language;
+  const base = 'px-2.5 py-1 rounded-lg text-xs font-semibold smooth';
+  return (
+    <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.15)' }}>
+      <button onClick={() => changeLang('kk')} className={`${base} ${active === 'kk' ? 'text-white' : 'text-muted hover:text-theme'}`}
+        style={active === 'kk' ? { background: 'var(--clr-accent)' } : {}}>ҚАЗ</button>
+      <button onClick={() => changeLang('ru')} className={`${base} ${active === 'ru' ? 'text-white' : 'text-muted hover:text-theme'}`}
+        style={active === 'ru' ? { background: 'var(--clr-accent)' } : {}}>РУС</button>
+    </div>
+  );
+}
+
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -11,7 +28,7 @@ export default function Login() {
   const [loading, setLoading] = useState(false);
 
   const { login } = useAuth();
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/';
@@ -61,20 +78,23 @@ export default function Login() {
           </div>
 
           <div className="flex-1 p-8 md:p-10">
-            <div className="flex items-center gap-3 mb-7 md:mb-8">
-              <div
-                className="w-10 h-10 rounded-2xl flex items-center justify-center md:hidden"
-                style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' }}
-              >
-                <Check size={20} className="text-white" strokeWidth={2.8} />
-              </div>
-              <div>
-                <div className="text-xl font-bold">
-                  <span className="text-theme">Achiev</span>
-                  <span style={{ color: '#818cf8' }}>ly</span>
+            <div className="flex items-center justify-between gap-3 mb-7 md:mb-8">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-2xl flex items-center justify-center md:hidden"
+                  style={{ background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)' }}
+                >
+                  <Check size={20} className="text-white" strokeWidth={2.8} />
                 </div>
-                <p className="text-sm text-muted">{t('login.subtitle')}</p>
+                <div>
+                  <div className="text-xl font-bold">
+                    <span className="text-theme">Achiev</span>
+                    <span style={{ color: '#818cf8' }}>ly</span>
+                  </div>
+                  <p className="text-sm text-muted">{t('login.subtitle')}</p>
+                </div>
               </div>
+              <LangSwitch i18n={i18n} />
             </div>
 
             {error && <div className="alert-error mb-4">{error}</div>}
