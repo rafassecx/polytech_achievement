@@ -14,7 +14,6 @@ router.post('/', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'Название и категория обязательны' });
     }
 
-    // куратор/admin жасаса — бірден approved, студент жасаса — pending
     let user_id = req.user.id;
     let status = 'pending';
 

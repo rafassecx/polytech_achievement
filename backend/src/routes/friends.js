@@ -6,7 +6,7 @@ const { createNotification, sendTelegramWithButtons } = require('../utils/notifi
 const router = express.Router();
 router.use(authMiddleware);
 
-// GET /api/friends — принятые друзья
+// GET /api/friends
 router.get('/', async (req, res) => {
   const me = req.user.id;
   try {
@@ -25,7 +25,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/friends/requests — входящие заявки
+// GET /api/friends/requests
 router.get('/requests', async (req, res) => {
   const me = req.user.id;
   try {
@@ -44,7 +44,7 @@ router.get('/requests', async (req, res) => {
   }
 });
 
-// GET /api/friends/status/:userId — статус с конкретным юзером
+// GET /api/friends/status/:userId
 router.get('/status/:userId', async (req, res) => {
   const me = req.user.id;
   const other = parseInt(req.params.userId);
@@ -67,7 +67,7 @@ router.get('/status/:userId', async (req, res) => {
   }
 });
 
-// POST /api/friends/request/:userId — отправить заявку
+// POST /api/friends/request/:userId
 router.post('/request/:userId', async (req, res) => {
   const me = req.user.id;
   const other = parseInt(req.params.userId);
@@ -89,17 +89,15 @@ router.post('/request/:userId', async (req, res) => {
     const meInfo = await pool.query('SELECT full_name FROM users WHERE id = $1', [me]);
     const senderName = meInfo.rows[0]?.full_name || 'Пайдаланушы';
 
-    // DB-уведомление
     createNotification({
       user_id: other,
       type: 'new_pending',
       title: 'Достық сұрауы',
       message: `${senderName} сізді достарына қосқысы келеді`,
       related_id: null,
-      send_telegram: false, // telegram'ды inline-батырмалармен жібереміз
+      send_telegram: false,
     }).catch(() => {});
 
-    // Telegram inline keyboard — асинхронно, не блокируем ответ
     pool.query('SELECT telegram_id FROM users WHERE id = $1', [other]).then(({ rows }) => {
       const tgId = rows[0]?.telegram_id;
       if (tgId) {
@@ -146,7 +144,7 @@ router.patch('/request/:id/accept', async (req, res) => {
   }
 });
 
-// PATCH /api/friends/request/:id/reject — отклонить или отменить
+// PATCH /api/friends/request/:id/reject
 router.patch('/request/:id/reject', async (req, res) => {
   const me = req.user.id;
   try {
@@ -161,7 +159,7 @@ router.patch('/request/:id/reject', async (req, res) => {
   }
 });
 
-// DELETE /api/friends/:userId — удалить из друзей
+// DELETE /api/friends/:userId
 router.delete('/:userId', async (req, res) => {
   const me = req.user.id;
   const other = parseInt(req.params.userId);

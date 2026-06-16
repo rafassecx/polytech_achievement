@@ -7,7 +7,6 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // При запуске пробуем восстановить сессию
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (token) {

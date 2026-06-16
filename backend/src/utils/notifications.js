@@ -2,7 +2,6 @@ const pool = require('../config/db');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 
-// Отправить сообщение в Telegram (если есть BOT_TOKEN и telegram_id)
 const sendTelegramMessage = async (telegramId, text) => {
   if (!BOT_TOKEN || !telegramId) return;
   try {
@@ -24,7 +23,6 @@ const sendTelegramMessage = async (telegramId, text) => {
   }
 };
 
-// Создать уведомление в БД + опционально продублировать в Telegram
 const createNotification = async ({
   user_id,
   type,
@@ -57,7 +55,6 @@ const createNotification = async ({
   }
 };
 
-// Уведомить всех кураторов и админов (для нового pending)
 const notifyAllCurators = async ({ achievement_id, title, author_name }) => {
   try {
     const result = await pool.query(
@@ -70,7 +67,7 @@ const notifyAllCurators = async ({ achievement_id, title, author_name }) => {
         title: 'Жаңа модерация',
         message: `${author_name} жаңа жетістік қосты: "${title}"`,
         related_id: achievement_id,
-        send_telegram: false, // не спамим Telegram'ом
+        send_telegram: false,
       }).catch(() => {});
     }
   } catch (err) {
@@ -78,7 +75,6 @@ const notifyAllCurators = async ({ achievement_id, title, author_name }) => {
   }
 };
 
-// Отправить Telegram-сообщение с inline-кнопками
 const sendTelegramWithButtons = async (telegramId, text, buttons) => {
   if (!BOT_TOKEN || !telegramId) return null;
   try {
@@ -100,7 +96,6 @@ const sendTelegramWithButtons = async (telegramId, text, buttons) => {
   }
 };
 
-// Ответить на callback_query (убрать "часики" у кнопки)
 const answerCallback = async (callbackQueryId, text = '') => {
   if (!BOT_TOKEN) return;
   try {
@@ -112,7 +107,6 @@ const answerCallback = async (callbackQueryId, text = '') => {
   } catch { /* тыныш */ }
 };
 
-// Отредактировать текст уже отправленного сообщения
 const editMessageText = async (chatId, messageId, text) => {
   if (!BOT_TOKEN) return;
   try {
@@ -126,7 +120,7 @@ const editMessageText = async (chatId, messageId, text) => {
         parse_mode: 'HTML',
       }),
     });
-  } catch { /* тыныш */ }
+  } catch { }
 };
 
 module.exports = {

@@ -1,4 +1,3 @@
--- Топтық чаттарда "кто прочитал" отслеживание
 CREATE TABLE IF NOT EXISTS group_last_reads (
   group_name TEXT NOT NULL,
   user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

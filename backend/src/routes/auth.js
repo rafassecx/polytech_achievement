@@ -25,7 +25,6 @@ router.post('/register', async (req, res) => {
 
     const password_hash = await bcrypt.hash(password, 10);
 
-    // роль student — admin/curator назначает отдельно
     const result = await pool.query(
       `INSERT INTO users (email, password_hash, full_name, group_name, role) 
        VALUES ($1, $2, $3, $4, 'student') 

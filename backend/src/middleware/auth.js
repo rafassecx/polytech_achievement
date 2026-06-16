@@ -1,6 +1,5 @@
 const jwt = require('jsonwebtoken');
 
-// Проверка JWT-токена
 const authMiddleware = (req, res, next) => {
   const authHeader = req.headers.authorization;
   
@@ -19,7 +18,6 @@ const authMiddleware = (req, res, next) => {
   }
 };
 
-// Проверка роли пользователя
 const checkRole = (...roles) => {
   return (req, res, next) => {
     if (!roles.includes(req.user.role)) {
@@ -29,7 +27,6 @@ const checkRole = (...roles) => {
   };
 };
 
-// Проверка ключа бота (X-Bot-API-Key)
 const botAuthMiddleware = (req, res, next) => {
   const apiKey = req.headers['x-bot-api-key'];
 

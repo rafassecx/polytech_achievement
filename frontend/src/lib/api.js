@@ -5,14 +5,12 @@ const api = axios.create({
   timeout: 30000,
 });
 
-// Подставляем JWT в каждый запрос
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
 
-// При 401 чистим локалсторадж
 api.interceptors.response.use(
   (response) => response,
   (error) => {

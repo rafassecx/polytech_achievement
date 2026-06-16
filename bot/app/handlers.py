@@ -14,10 +14,6 @@ from app.states import AchievementStates
 logger = logging.getLogger(__name__)
 router = Router()
 
-
-# ───────────────────────────────────────────
-# /start
-# ───────────────────────────────────────────
 @router.message(CommandStart())
 async def cmd_start(message: Message, state: FSMContext):
     await state.clear()
@@ -50,9 +46,6 @@ async def cmd_start(message: Message, state: FSMContext):
         )
 
 
-# ───────────────────────────────────────────
-# /link <code>
-# ───────────────────────────────────────────
 @router.message(Command('link'))
 async def cmd_link(message: Message, state: FSMContext):
     await state.clear()
@@ -88,9 +81,6 @@ async def cmd_link(message: Message, state: FSMContext):
         await message.answer(f'❌ Қате: {e.message}')
 
 
-# ───────────────────────────────────────────
-# Помощь и подсказки
-# ───────────────────────────────────────────
 @router.message(F.text == '🔗 Аккаунтты байланыстыру')
 async def link_hint(message: Message):
     await message.answer(
@@ -115,10 +105,6 @@ async def help_msg(message: Message):
         'Менюдегі батырмалар арқылы да басқаруға болады.'
     )
 
-
-# ───────────────────────────────────────────
-# /me — профиль
-# ───────────────────────────────────────────
 @router.message(Command('me'))
 @router.message(F.text == '👤 Профиль')
 async def cmd_me(message: Message):
@@ -145,9 +131,6 @@ async def cmd_me(message: Message):
     await message.answer(text, parse_mode='HTML')
 
 
-# ───────────────────────────────────────────
-# ❌ Аяқтау
-# ───────────────────────────────────────────
 @router.message(F.text == '❌ Аяқтау')
 async def cancel_handler(message: Message, state: FSMContext):
     current = await state.get_state()
@@ -158,9 +141,6 @@ async def cancel_handler(message: Message, state: FSMContext):
         await message.answer('Тоқтататын әрекет жоқ.', reply_markup=kb.main)
 
 
-# ───────────────────────────────────────────
-# 🏆 Жетістік қосу — FSM
-# ───────────────────────────────────────────
 @router.message(F.text == '🏆 Жетістік қосу')
 async def add_achievement(message: Message, state: FSMContext):
     try:
@@ -318,9 +298,6 @@ async def wrong_photo(message: Message):
     await message.answer('Фото жіберіңіз немесе "⏩ Өткізіп жіберу" батырмасын басыңыз.')
 
 
-# ───────────────────────────────────────────
-# 📰 Лента
-# ───────────────────────────────────────────
 @router.message(F.text == '📰 Лента')
 async def show_feed(message: Message):
     try:
@@ -355,9 +332,6 @@ async def show_feed(message: Message):
         await message.answer(text, parse_mode='HTML')
 
 
-# ───────────────────────────────────────────
-# 📊 Менің жетістіктерім
-# ───────────────────────────────────────────
 @router.message(F.text == '📊 Менің жетістіктерім')
 async def my_achievements(message: Message):
     try:

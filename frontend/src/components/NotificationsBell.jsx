@@ -57,7 +57,6 @@ export default function NotificationsBell() {
       const notifs = data.notifications;
       setItems(notifs);
 
-      // Ашқанда бірден барлығын оқылды деп белгілейміз
       if (notifs.some(n => !n.is_read)) {
         api.patch('/notifications/read-all').catch(() => {});
         setCount(0);
@@ -65,7 +64,7 @@ export default function NotificationsBell() {
           setItems(prev => prev.map(n => ({ ...n, is_read: true })));
         }, 400);
       }
-    } catch { /* тыныш */ }
+    } catch { }
     setLoading(false);
   };
 

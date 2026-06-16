@@ -5,7 +5,7 @@ const { authMiddleware } = require('../middleware/auth');
 const router = express.Router();
 router.use(authMiddleware);
 
-// POST /api/bookmarks/:achievementId — тоггл (добавить/убрать)
+// POST /api/bookmarks/:achievementId
 router.post('/:achievementId', async (req, res) => {
   const me = req.user.id;
   const achId = parseInt(req.params.achievementId);
@@ -28,7 +28,7 @@ router.post('/:achievementId', async (req, res) => {
   }
 });
 
-// GET /api/bookmarks — мои сохранённые достижения
+// GET /api/bookmarks
 router.get('/', async (req, res) => {
   const me = req.user.id;
   try {
@@ -51,7 +51,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-// GET /api/bookmarks/check/:achievementId — проверить, сохранено ли
+// GET /api/bookmarks/check/:achievementId
 router.get('/check/:achievementId', async (req, res) => {
   const me = req.user.id;
   const achId = parseInt(req.params.achievementId);

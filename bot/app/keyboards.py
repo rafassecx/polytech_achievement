@@ -37,7 +37,6 @@ skip_or_cancel = ReplyKeyboardMarkup(
 
 
 def categories_inline():
-    """Категории те же, что на сайте"""
     categories = [
         ('📚 Оқу', 'academic'),
         ('⚽ Спорт', 'sport'),

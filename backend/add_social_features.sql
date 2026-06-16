@@ -1,14 +1,12 @@
--- Достар (друзья)
 CREATE TABLE IF NOT EXISTS friendships (
   id SERIAL PRIMARY KEY,
   requester_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   addressee_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  status VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending, accepted
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE(requester_id, addressee_id)
 );
 
--- Таңдаулылар (закладки)
 CREATE TABLE IF NOT EXISTS bookmarks (
   id SERIAL PRIMARY KEY,
   user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -17,7 +15,6 @@ CREATE TABLE IF NOT EXISTS bookmarks (
   UNIQUE(user_id, achievement_id)
 );
 
--- Telegram reply контексті: DM хабарлама жіберілгенде сақталады
 CREATE TABLE IF NOT EXISTS tg_reply_context (
   id SERIAL PRIMARY KEY,
   tg_message_id BIGINT NOT NULL,
@@ -27,7 +24,6 @@ CREATE TABLE IF NOT EXISTS tg_reply_context (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Активті DM серіктесі: соңғы хабарлама кімнен келгенін сақтайды
 CREATE TABLE IF NOT EXISTS tg_active_dm (
   telegram_id BIGINT PRIMARY KEY,
   app_user_id INT REFERENCES users(id) ON DELETE CASCADE,
@@ -35,13 +31,12 @@ CREATE TABLE IF NOT EXISTS tg_active_dm (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Топ ауыстыру сұраулары
 CREATE TABLE IF NOT EXISTS group_change_requests (
   id SERIAL PRIMARY KEY,
   user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   current_group TEXT,
   requested_group TEXT NOT NULL,
-  status VARCHAR(20) NOT NULL DEFAULT 'pending', -- pending, approved, rejected
+  status VARCHAR(20) NOT NULL DEFAULT 'pending',
   moderator_comment TEXT,
   reviewed_by INT REFERENCES users(id),
   created_at TIMESTAMPTZ DEFAULT NOW(),

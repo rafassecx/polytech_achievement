@@ -22,14 +22,12 @@ export const STATUS_LABELS = {
   rejected: 'Бас тартылған',
 };
 
-// Стильдер — glassmorphism-ге лайық (CSS variable арқылы жарық/қараңғы тема)
 export const STATUS_GLASS = {
   pending:  { background: 'rgba(245,158,11,0.12)',  border: 'rgba(245,158,11,0.30)',  color: '#d97706' },
   approved: { background: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.30)',  color: '#059669' },
   rejected: { background: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.30)',   color: '#dc2626' },
 };
 
-// Ескі экспорт (backward compat)
 export const statusColors = {
   pending:  'border',
   approved: 'border',

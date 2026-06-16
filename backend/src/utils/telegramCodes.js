@@ -1,11 +1,8 @@
-// Хранилище одноразовых кодов для привязки Telegram
-// (в памяти; на проде заменить на Redis)
-
-const codes = new Map(); // code -> { user_id, expires_at }
+const codes = new Map();
 
 const generateCode = (user_id) => {
-  const code = Math.floor(100000 + Math.random() * 900000).toString(); // 6 цифр
-  const expires_at = Date.now() + 10 * 60 * 1000; // 10 минут
+  const code = Math.floor(100000 + Math.random() * 900000).toString();
+  const expires_at = Date.now() + 10 * 60 * 1000;
   codes.set(code, { user_id, expires_at });
   return { code, expires_at: new Date(expires_at).toISOString() };
 };
@@ -17,11 +14,10 @@ const consumeCode = (code) => {
     codes.delete(code);
     return null;
   }
-  codes.delete(code); // одноразовый — сразу удаляем
+  codes.delete(code);
   return entry.user_id;
 };
 
-// Каждую минуту чистим просроченные коды
 setInterval(() => {
   const now = Date.now();
   for (const [code, entry] of codes.entries()) {

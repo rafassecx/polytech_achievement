@@ -26,7 +26,7 @@ CREATE TABLE users (
 
 CREATE TABLE groups (
   id          SERIAL PRIMARY KEY,
-  name        VARCHAR(100) NOT NULL UNIQUE,   -- 'P22-2B', 'IS-23-1' т.б.
+  name        VARCHAR(100) NOT NULL UNIQUE,
   curator_id  INT REFERENCES users(id) ON DELETE SET NULL,
   description TEXT,
   created_at  TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -80,10 +80,10 @@ CREATE TABLE comments (
 CREATE TABLE notifications (
   id         SERIAL PRIMARY KEY,
   user_id    INT          NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  type       VARCHAR(50)  NOT NULL,   -- 'achievement_approved', 'comment', 'like', 'new_pending'
+  type       VARCHAR(50)  NOT NULL,
   title      VARCHAR(255) NOT NULL,
   message    TEXT         NOT NULL,
-  related_id INT,                     -- achievement_id (сілтеме)
+  related_id INT,
   is_read    BOOLEAN      NOT NULL DEFAULT FALSE,
   created_at TIMESTAMPTZ  NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

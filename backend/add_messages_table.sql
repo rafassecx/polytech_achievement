@@ -1,6 +1,3 @@
--- Тек messages кестесін жасайды (егер жоқ болса)
--- Бар деректерді жоймайды!
-
 CREATE TABLE IF NOT EXISTS messages (
   id          SERIAL PRIMARY KEY,
   sender_id   INT  NOT NULL REFERENCES users(id) ON DELETE CASCADE,

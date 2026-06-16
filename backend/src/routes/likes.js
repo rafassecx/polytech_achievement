@@ -81,7 +81,7 @@ router.get('/:achievement_id', async (req, res) => {
           [achievement_id, decoded.id]
         );
         liked = result.rows.length > 0;
-      } catch (e) { /* токен невалидный — просто игнорируем */ }
+      } catch (e) { }
     }
 
     res.json({ count: count.rows[0].count, liked });

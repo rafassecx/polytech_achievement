@@ -57,7 +57,6 @@ router.get('/', authMiddleware, checkRole('curator', 'admin'), async (req, res) 
   }
 });
 
-// студенттер топты тікелей өзгерте алмайды — group_name игнорируется
 router.put('/me', authMiddleware, async (req, res) => {
   try {
     const { full_name, bio, group_name } = req.body;
@@ -332,14 +331,13 @@ router.get('/:id', async (req, res) => {
 
     const user = { ...result.rows[0], friends_count: 0 };
 
-    // friendships кестесі жоқ болуы мүмкін — қате болса 0 қайтарамыз
     try {
       const fr = await pool.query(
         `SELECT COUNT(*)::int AS cnt FROM friendships WHERE (requester_id=$1 OR addressee_id=$1) AND status='accepted'`,
         [id]
       );
       user.friends_count = fr.rows[0].cnt;
-    } catch { /* table not created yet */ }
+    } catch { }
 
     res.json(user);
   } catch (error) {

@@ -8,13 +8,11 @@ const MAP = {
   other:    { Icon: Sparkles,  color: '#f59e0b', bg: 'rgba(245,158,11,0.15)' },
 };
 
-// Маленькая инлайн-иконка для бейджей
 export function CategoryBadgeIcon({ category, size = 13 }) {
   const item = MAP[category] || MAP.other;
   return <item.Icon size={size} style={{ color: item.color }} className="shrink-0" />;
 }
 
-// Большая иконка с фоном для карточки (когда нет preview)
 export function CategoryCardIcon({ category, className = '' }) {
   const item = MAP[category] || MAP.other;
   return (
@@ -22,7 +20,7 @@ export function CategoryCardIcon({ category, className = '' }) {
       className={`w-full h-full flex items-center justify-center relative overflow-hidden ${className}`}
       style={{ background: item.bg }}
     >
-      {/* Нүктелі тор паттерні */}
+      {}
       <svg
         className="absolute inset-0 w-full h-full"
         xmlns="http://www.w3.org/2000/svg"

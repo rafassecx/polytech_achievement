@@ -48,7 +48,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: { fileSize: 50 * 1024 * 1024 } // 50 MB
+  limits: { fileSize: 50 * 1024 * 1024 }
 });
 
 // POST /api/upload/:achievement_id
@@ -77,7 +77,7 @@ router.post('/:achievement_id', authMiddleware, upload.array('files', 10), async
     const savedFiles = [];
     for (const file of req.files) {
       const fileType = getFileType(file.mimetype);
-      const fileUrl = '/' + file.path.replace(/\\/g, '/'); // путь для URL
+      const fileUrl = '/' + file.path.replace(/\\/g, '/');
 
       const result = await pool.query(
         `INSERT INTO files (achievement_id, file_url, file_type, file_name, file_size, mime_type) 

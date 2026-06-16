@@ -219,7 +219,7 @@ async function startPolling() {
           }
         }
       }
-    } catch { /* timeout немесе желі қатесі */ }
+    } catch { }
     poll();
   };
 
@@ -228,7 +228,6 @@ async function startPolling() {
 
 app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
-  // Auto-run SQL migration for social features tables
   try {
     const migPath = path.join(__dirname, '..', 'add_social_features.sql');
     if (fs.existsSync(migPath)) {

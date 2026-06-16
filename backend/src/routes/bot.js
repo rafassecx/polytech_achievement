@@ -10,10 +10,8 @@ const { notifyAllCurators } = require('../utils/notifications');
 
 const router = express.Router();
 
-// Все эндпоинты бота требуют ключ
 router.use(botAuthMiddleware);
 
-// Настройка загрузки файлов (как в upload.js)
 const getFileType = (mimetype) => {
   if (mimetype.startsWith('image/')) return 'image';
   if (mimetype.startsWith('video/')) return 'video';
@@ -39,7 +37,6 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage, limits: { fileSize: 50 * 1024 * 1024 } });
 
-// ===== ПРИВЯЗКА АККАУНТА =====
 // POST /api/bot/link
 router.post('/link', async (req, res) => {
   try {
@@ -54,7 +51,6 @@ router.post('/link', async (req, res) => {
       return res.status(400).json({ message: 'Код недействителен или просрочен' });
     }
 
-    // Проверим, не привязан ли уже этот telegram_id к другому юзеру
     const existing = await pool.query(
       'SELECT id, email FROM users WHERE telegram_id = $1 AND id != $2',
       [telegram_id, user_id]
@@ -80,7 +76,6 @@ router.post('/link', async (req, res) => {
   }
 });
 
-// ===== ПОИСК ПОЛЬЗОВАТЕЛЯ ПО TELEGRAM_ID =====
 // GET /api/bot/users/by-telegram/:telegram_id
 router.get('/users/by-telegram/:telegram_id', async (req, res) => {
   try {
@@ -102,7 +97,6 @@ router.get('/users/by-telegram/:telegram_id', async (req, res) => {
   }
 });
 
-// ===== СОЗДАТЬ ДОСТИЖЕНИЕ ОТ ИМЕНИ ПОЛЬЗОВАТЕЛЯ =====
 // POST /api/bot/achievements
 router.post('/achievements', async (req, res) => {
   try {
@@ -112,7 +106,6 @@ router.post('/achievements', async (req, res) => {
       return res.status(400).json({ message: 'telegram_id, title, category обязательны' });
     }
 
-    // Находим пользователя по telegram_id
     const userResult = await pool.query(
       'SELECT id FROM users WHERE telegram_id = $1',
       [telegram_id]
@@ -148,14 +141,12 @@ router.post('/achievements', async (req, res) => {
   }
 });
 
-// ===== ЗАГРУЗИТЬ ФАЙЛЫ К ДОСТИЖЕНИЮ ИЗ БОТА =====
 // POST /api/bot/achievements/:id/upload
 router.post('/achievements/:id/upload', upload.array('files', 10), async (req, res) => {
   try {
     const { id } = req.params;
     const { telegram_id } = req.body;
 
-    // Проверим, что достижение принадлежит этому telegram_id
     const check = await pool.query(`
       SELECT a.id FROM achievements a
       JOIN users u ON a.user_id = u.id
@@ -191,7 +182,6 @@ router.post('/achievements/:id/upload', upload.array('files', 10), async (req, r
   }
 });
 
-// ===== ЛЕНТА ДЛЯ БОТА =====
 // GET /api/bot/feed?limit=10
 router.get('/feed', async (req, res) => {
   try {
@@ -216,7 +206,6 @@ router.get('/feed', async (req, res) => {
   }
 });
 
-// ===== МОИ ДОСТИЖЕНИЯ ДЛЯ БОТА =====
 // GET /api/bot/my-achievements/:telegram_id
 router.get('/my-achievements/:telegram_id', async (req, res) => {
   try {

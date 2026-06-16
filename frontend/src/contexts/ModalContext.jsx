@@ -41,7 +41,6 @@ export function useModal() {
   return ctx;
 }
 
-// ── Компонент ──────────────────────────────────────────────────────────────────
 
 import { AlertCircle, AlertTriangle, Trash2, X } from 'lucide-react';
 
@@ -60,7 +59,6 @@ function Modal({ modal, onClose }) {
     if (type === 'prompt') inputRef.current?.focus();
   }, [type]);
 
-  // Escape → cancel
   useEffect(() => {
     const handler = (e) => {
       if (e.key === 'Escape') handleCancel();
@@ -104,7 +102,7 @@ function Modal({ modal, onClose }) {
           opacity: visible ? 1 : 0,
         }}
       >
-        {/* Иконка + жабу */}
+        {}
         <div className="flex items-start justify-between gap-3">
           <div
             className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
@@ -120,10 +118,10 @@ function Modal({ modal, onClose }) {
           </button>
         </div>
 
-        {/* Хабарлама */}
+        {}
         <p className="text-sm text-theme leading-relaxed">{message}</p>
 
-        {/* Prompt инпуті */}
+        {}
         {type === 'prompt' && (
           <input
             ref={inputRef}
@@ -136,7 +134,7 @@ function Modal({ modal, onClose }) {
           />
         )}
 
-        {/* Батырмалар */}
+        {}
         <div className="flex gap-2 mt-1">
           {type !== 'alert' && (
             <button

@@ -256,7 +256,6 @@ router.delete('/conversation/:userId', async (req, res) => {
 });
 
 // DELETE /api/messages/:id
-// жіберуші өз хатын жоя алады; admin топтық чаттағы кез келген хатты жоя алады
 router.delete('/:id', async (req, res) => {
   const me = req.user.id;
   const isAdmin = req.user.role === 'admin';

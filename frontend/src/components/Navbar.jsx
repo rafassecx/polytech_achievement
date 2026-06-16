@@ -15,7 +15,7 @@ export default function Navbar() {
       try {
         const { data } = await api.get('/messages/unread-count');
         setUnreadMsgs(data.count);
-      } catch { /* тыныш */ }
+      } catch { }
     };
     load();
     const iv = setInterval(load, 30000);
@@ -27,13 +27,11 @@ export default function Navbar() {
       isActive ? 'text-accent' : 'text-muted hover:text-theme'
     }`;
 
-  // Нижняя навигация для мобильных
   const bottomLinkCls = ({ isActive }) =>
     `flex flex-col items-center justify-center gap-0.5 py-1.5 px-3 rounded-xl smooth min-w-0 ${
       isActive ? 'text-accent' : 'text-muted'
     }`;
 
-  // Средняя кнопка для разных ролей
   const midItem = user
     ? user.role === 'admin'
       ? { to: '/admin/users', Icon: Users, label: 'Басқару' }
@@ -44,11 +42,11 @@ export default function Navbar() {
 
   return (
     <>
-      {/* ═══ ЖОҒАРҒЫ NAVBAR ═══ */}
+      {}
       <header className="glass-nav sticky top-0 z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
 
-          {/* Логотип */}
+          {}
           <Link to="/" className="flex items-center gap-2.5 shrink-0">
             <div
               className="w-9 h-9 rounded-2xl flex items-center justify-center shrink-0"
@@ -68,7 +66,7 @@ export default function Navbar() {
             </div>
           </Link>
 
-          {/* Десктоп навигация (md+) */}
+          {}
           <nav className="hidden md:flex items-center gap-0.5">
             <NavLink to="/" className={lc} end>
               <Home size={15} />
@@ -96,11 +94,11 @@ export default function Navbar() {
             )}
           </nav>
 
-          {/* Оң жақ */}
+          {}
           <div className="flex items-center gap-2 shrink-0">
             {user ? (
               <>
-                {/* Чат — иконка ғана */}
+                {}
                 <NavLink
                   to="/chat"
                   className={({ isActive }) =>
@@ -123,7 +121,7 @@ export default function Navbar() {
 
                 <NotificationsBell />
 
-                {/* Жетістік қосу — тек десктопта */}
+                {}
                 <NavLink
                   to="/add"
                   className={({ isActive }) =>
@@ -137,7 +135,7 @@ export default function Navbar() {
                   <Plus size={18} className="text-white" strokeWidth={2.5} />
                 </NavLink>
 
-                {/* Профиль аватары */}
+                {}
                 <NavLink
                   to="/profile"
                   className="block rounded-2xl smooth hover:opacity-90"
@@ -173,7 +171,7 @@ export default function Navbar() {
         </div>
       </header>
 
-      {/* ═══ ТӨМЕНГІ МОБИЛЬДІ НАВИГАЦИЯ (md-ге дейін) ═══ */}
+      {}
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-white/10"
         style={{ background: 'var(--glass-nav)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
