@@ -131,7 +131,7 @@ app.get('/api/health', async (req, res) => {
 if (process.env.NODE_ENV === 'production') {
   const frontendDist = path.join(__dirname, '..', '..', 'frontend', 'dist');
   app.use(express.static(frontendDist));
-  app.get('*', (req, res) => {
+  app.get('/{*splat}', (req, res) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) return;
     res.sendFile(path.join(frontendDist, 'index.html'));
   });
