@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { Trophy } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 import { CategoryBadgeIcon } from '../components/CategoryIcon';
 
-const MEDALS = ['🥇', '🥈', '🥉'];
+const MEDAL_COLORS = ['#f59e0b', '#94a3b8', '#cd7f32'];
 
 function Avatar({ name, src }) {
   if (src) {
@@ -63,7 +64,9 @@ export default function Leaderboard() {
   return (
     <div className="max-w-3xl mx-auto px-5 py-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-theme">🏆 {t('leaderboard.title')}</h1>
+        <h1 className="text-2xl font-bold text-theme flex items-center gap-2.5">
+          <Trophy size={22} className="text-accent" /> {t('leaderboard.title')}
+        </h1>
         <p className="text-muted text-sm mt-1">{t('leaderboard.subtitle')}</p>
       </div>
 
@@ -111,9 +114,9 @@ export default function Leaderboard() {
                 {/* Орын */}
                 <div className="w-10 text-center shrink-0">
                   {i < 3 ? (
-                    <span className="text-2xl">{MEDALS[i]}</span>
+                    <span className="text-base font-bold" style={{ color: MEDAL_COLORS[i] }}>{i + 1}</span>
                   ) : (
-                    <span className="text-lg font-bold text-muted">{i + 1}</span>
+                    <span className="text-base font-bold text-muted">{i + 1}</span>
                   )}
                 </div>
 

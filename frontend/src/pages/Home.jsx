@@ -11,7 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { CATEGORIES } from '../lib/constants';
 import { CategoryBadgeIcon, CategoryCardIcon } from '../components/CategoryIcon';
 
-const MEDALS = ['🥇', '🥈', '🥉'];
+const MEDAL_COLORS = ['#f59e0b', '#94a3b8', '#cd7f32'];
 
 function StatCard({ Icon, iconColor, iconBg, value, label }) {
   return (
@@ -47,7 +47,7 @@ function MiniLeaderboard({ students }) {
       <div className="space-y-2">
         {students.slice(0, 3).map((s, i) => (
           <div key={s.id} className="flex items-center gap-2.5">
-            <span className="w-5 text-center text-sm shrink-0">{MEDALS[i]}</span>
+            <span className="w-5 text-center text-xs font-bold shrink-0" style={{ color: MEDAL_COLORS[i] }}>{i + 1}</span>
 
             {s.avatar_url ? (
               <img src={s.avatar_url} alt="" className="w-7 h-7 rounded-xl object-cover shrink-0" />
