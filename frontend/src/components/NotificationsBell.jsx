@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, MessageCircle, Heart, CheckCircle2, XCircle, ClipboardList } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
 
 const TYPE_ICON = {
@@ -11,17 +12,22 @@ const TYPE_ICON = {
   new_pending: { Icon: ClipboardList, color: '#f59e0b' },
 };
 
-function timeAgo(dateStr) {
-  const seconds = Math.floor((Date.now() - new Date(dateStr)) / 1000);
-  if (seconds < 60) return 'жаңа';
-  const m = Math.floor(seconds / 60);
-  if (m < 60) return `${m} мин`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h} сағ`;
-  return `${Math.floor(h / 24)} күн`;
+function useTimeAgo(t) {
+  return (dateStr) => {
+    const seconds = Math.floor((Date.now() - new Date(dateStr)) / 1000);
+    if (seconds < 60) return t('notifications.timeNow');
+    const m = Math.floor(seconds / 60);
+    if (m < 60) return t('notifications.timeMin', { count: m });
+    const h = Math.floor(m / 60);
+    if (h < 24) return t('notifications.timeHour', { count: h });
+    return t('notifications.timeDay', { count: Math.floor(h / 24) });
+  };
 }
 
 export default function NotificationsBell() {
+  const { t } = useTranslation();
+  const timeAgo = useTimeAgo(t);
+
   const [open, setOpen] = useState(false);
   const [count, setCount] = useState(0);
   const [items, setItems] = useState([]);
@@ -83,7 +89,7 @@ export default function NotificationsBell() {
       <button
         onClick={toggle}
         className="btn-glass px-2.5 py-2 leading-none relative flex items-center justify-center"
-        aria-label="Хабарландырулар"
+        aria-label={t('notifications.title')}
       >
         <Bell size={18} />
         {count > 0 && (
@@ -108,14 +114,14 @@ export default function NotificationsBell() {
           }}
         >
           <div className="px-4 py-3 flex items-center justify-between border-b border-white/10">
-            <span className="text-sm font-semibold text-theme">Хабарландырулар</span>
+            <span className="text-sm font-semibold text-theme">{t('notifications.title')}</span>
           </div>
 
           <div className="overflow-y-auto flex-1">
             {loading ? (
-              <div className="text-center text-muted py-8 text-sm">Жүктелуде...</div>
+              <div className="text-center text-muted py-8 text-sm">{t('common.loading')}</div>
             ) : items.length === 0 ? (
-              <div className="text-center text-muted py-8 text-sm">Хабарландырулар жоқ</div>
+              <div className="text-center text-muted py-8 text-sm">{t('notifications.empty')}</div>
             ) : (
               items.map((n) => {
                 const meta = TYPE_ICON[n.type] || { Icon: Bell, color: 'var(--clr-accent)' };

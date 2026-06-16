@@ -9,7 +9,6 @@ import {
   Globe,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { CATEGORY_LABELS } from '../lib/constants';
 import { CategoryBadgeIcon } from '../components/CategoryIcon';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
@@ -61,12 +60,6 @@ export default function Profile() {
   const [pwMsg, setPwMsg] = useState(null);
   const [showPw, setShowPw] = useState({ current: false, next: false, confirm: false });
 
-  const [groupRequest, setGroupRequest] = useState(null);
-  const [showGroupForm, setShowGroupForm] = useState(false);
-  const [newGroup, setNewGroup] = useState('');
-  const [groupSending, setGroupSending] = useState(false);
-  const [groupMsg, setGroupMsg] = useState(null);
-
   const [friendRequests, setFriendRequests] = useState([]);
   const [processingFriend, setProcessingFriend] = useState(null);
 
@@ -84,13 +77,6 @@ export default function Profile() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const loadGroupRequest = async () => {
-    try {
-      const { data } = await api.get('/users/me/group-request');
-      setGroupRequest(data.request);
-    } catch { /* тыныш */ }
   };
 
   const loadFriendRequests = async () => {
@@ -116,7 +102,6 @@ export default function Profile() {
 
   useEffect(() => {
     loadProfile();
-    loadGroupRequest();
     if (user) {
       loadFriendRequests();
       loadFriends();
@@ -205,32 +190,6 @@ export default function Profile() {
     }
   };
 
-  const submitGroupRequest = async (e) => {
-    e.preventDefault();
-    if (!newGroup.trim()) return;
-    setGroupSending(true);
-    setGroupMsg(null);
-    try {
-      await api.post('/users/me/group-request', { requested_group: newGroup.trim() });
-      setGroupMsg({ ok: true, text: t('profile.groupRequestSent') });
-      setShowGroupForm(false);
-      setNewGroup('');
-      loadGroupRequest();
-    } catch (err) {
-      setGroupMsg({ ok: false, text: err.response?.data?.message || t('common.error') });
-    } finally {
-      setGroupSending(false);
-    }
-  };
-
-  const cancelGroupRequest = async () => {
-    try {
-      await api.delete('/users/me/group-request');
-      setGroupRequest(null);
-      setGroupMsg(null);
-    } catch { /* тыныш */ }
-  };
-
   const handleFriendAction = async (reqId, userId, action) => {
     setProcessingFriend(reqId);
     try {
@@ -254,7 +213,14 @@ export default function Profile() {
   if (loading) return <div className="text-center text-muted py-20 text-sm">{t('common.loading')}</div>;
   if (!profile) return null;
 
-  const isStudent = user?.role === 'student';
+  const catLabels = {
+    academic: t('achievements.category.academic'),
+    sport: t('achievements.category.sport'),
+    cultural: t('achievements.category.cultural'),
+    social: t('achievements.category.social'),
+    other: t('achievements.category.other'),
+  };
+
   const roleLabels = {
     student: t('profile.roles.student'),
     curator: t('profile.roles.curator'),
@@ -442,57 +408,6 @@ export default function Profile() {
             )}
           </div>
 
-          {isStudent && (
-            <div className="glass-panel p-6">
-              <h3 className="text-base font-semibold text-theme mb-1">{t('profile.groupChange')}</h3>
-              <p className="text-xs text-muted mb-4">{t('profile.groupChangeNote')}</p>
-
-              {groupMsg && (
-                <div className={`${groupMsg.ok ? 'alert-success' : 'alert-error'} mb-4`}>{groupMsg.text}</div>
-              )}
-
-              {groupRequest && groupRequest.status === 'pending' ? (
-                <div className="flex items-center justify-between glass-panel p-3" style={{ borderRadius: 12 }}>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock size={14} style={{ color: '#f59e0b' }} />
-                    <span className="text-muted">{t('profile.groupPendingLabel')}</span>
-                    <span className="font-medium text-theme">«{groupRequest.requested_group}»</span>
-                    <span className="text-xs text-muted">{t('profile.groupPendingStatus')}</span>
-                  </div>
-                  <button onClick={cancelGroupRequest} className="text-xs text-muted hover:text-danger smooth">
-                    {t('profile.groupDelete')}
-                  </button>
-                </div>
-              ) : showGroupForm ? (
-                <form onSubmit={submitGroupRequest} className="space-y-3">
-                  <input
-                    type="text"
-                    value={newGroup}
-                    onChange={(e) => setNewGroup(e.target.value)}
-                    placeholder={t('profile.groupPlaceholder')}
-                    className="glass-input"
-                    autoFocus
-                  />
-                  <div className="flex gap-2">
-                    <button type="submit" disabled={groupSending || !newGroup.trim()}
-                      className="btn-primary px-4 py-2 rounded-xl text-sm">
-                      {groupSending ? t('profile.groupSending') : t('profile.groupSend')}
-                    </button>
-                    <button type="button" onClick={() => { setShowGroupForm(false); setNewGroup(''); }}
-                      className="btn-glass px-4 py-2 text-sm">
-                      {t('profile.cancel')}
-                    </button>
-                  </div>
-                </form>
-              ) : (
-                <button onClick={() => setShowGroupForm(true)}
-                  className="btn-glass px-4 py-2 text-sm flex items-center gap-1.5">
-                  <Pencil size={13} /> {t('profile.groupRequest')}
-                </button>
-              )}
-            </div>
-          )}
-
           <div className="glass-panel p-6">
             <h3 className="text-base font-semibold text-theme mb-4 flex items-center gap-2">
               <Send size={16} /> {t('profile.telegramTitle')}
@@ -590,7 +505,7 @@ export default function Profile() {
                       <div className="flex items-center gap-2 mt-0.5 text-[10px] text-muted">
                         <span className="flex items-center gap-0.5">
                           <CategoryBadgeIcon category={a.category} size={9} />
-                          {CATEGORY_LABELS[a.category] || a.category}
+                          {catLabels[a.category] || a.category}
                         </span>
                         <span className="flex items-center gap-0.5"><Heart size={9} /> {a.likes_count || 0}</span>
                         <span className="flex items-center gap-0.5"><MessageCircle size={9} /> {a.comments_count || 0}</span>

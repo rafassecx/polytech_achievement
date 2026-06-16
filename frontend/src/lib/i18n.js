@@ -138,6 +138,13 @@ const kk = {
     noComments: 'Әзірше пікір жоқ',
     notFound: 'Жетістік табылмады', backHome: 'Басты бетке',
   },
+  modal: {
+    ok: 'Жарайды', confirm: 'Растаймын',
+  },
+  notifications: {
+    title: 'Хабарландырулар', empty: 'Хабарландырулар жоқ',
+    timeNow: 'жаңа', timeMin: '{{count}} мин', timeHour: '{{count}} сағ', timeDay: '{{count}} күн',
+  },
   common: {
     loading: 'Жүктелуде...', save: 'Сақтау', cancel: 'Бас тарту', delete: 'Жою',
     search: 'Іздеу', send: 'Жіберу', close: 'Жабу', back: 'Артқа',
@@ -282,6 +289,13 @@ const ru = {
     loginToComment: 'Чтобы оставить комментарий,', loginLink: 'войдите',
     noComments: 'Комментариев пока нет',
     notFound: 'Достижение не найдено', backHome: 'На главную',
+  },
+  modal: {
+    ok: 'Хорошо', confirm: 'Подтвердить',
+  },
+  notifications: {
+    title: 'Уведомления', empty: 'Нет уведомлений',
+    timeNow: 'только что', timeMin: '{{count}} мин', timeHour: '{{count}} ч', timeDay: '{{count}} дн',
   },
   common: {
     loading: 'Загрузка...', save: 'Сохранить', cancel: 'Отмена', delete: 'Удалить',

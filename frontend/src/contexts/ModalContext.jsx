@@ -43,8 +43,10 @@ export function useModal() {
 
 
 import { AlertCircle, AlertTriangle, Trash2, X } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 function Modal({ modal, onClose }) {
+  const { t } = useTranslation();
   const { type, message, danger, placeholder } = modal;
   const [inputVal, setInputVal] = useState('');
   const [visible, setVisible] = useState(false);
@@ -141,7 +143,7 @@ function Modal({ modal, onClose }) {
               onClick={handleCancel}
               className="btn-glass flex-1 py-2.5 text-sm"
             >
-              Бас тарту
+              {t('common.cancel')}
             </button>
           )}
           <button
@@ -156,7 +158,7 @@ function Modal({ modal, onClose }) {
                 : '0 4px 14px rgba(99,102,241,0.35)',
             }}
           >
-            {type === 'alert' ? 'Жарайды' : type === 'prompt' ? 'Жіберу' : isDanger ? 'Жою' : 'Растаймын'}
+            {type === 'alert' ? t('modal.ok') : type === 'prompt' ? t('common.send') : isDanger ? t('common.delete') : t('modal.confirm')}
           </button>
         </div>
       </div>
